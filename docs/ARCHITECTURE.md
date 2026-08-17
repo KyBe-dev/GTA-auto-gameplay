@@ -1,9 +1,9 @@
 # GTA 离线模式智能操作软件：总体架构与 API 规划 v0.1（BYOK 修订版）
 
-更新日期：2026-08-12  
+更新日期：2026-08-17
 当前验证平台：GTA V Windows 离线故事模式  
 未来目标：在 GTA VI Windows 版正式发布且允许测试后，通过适配器扩展支持
-发布目标：源代码计划托管在公开 GitHub 仓库；可安装版本仅通过经过审计的 GitHub Releases 或后续明确记录的发布渠道提供
+发布目标：源代码托管在公开 GitHub 仓库；在代码许可证确定前只属于公开可见源码，不得称为开源项目。所有公开安装包，包括 Developer Preview 安装包，只能在完成 M9 对应发布检查后通过经过审计的 GitHub Releases 或后续明确记录的发布渠道提供
 
 ## 1. 项目边界
 
@@ -17,7 +17,8 @@
 - 软件、公开仓库、发布产物和项目维护者均不提供共享 API Key 或默认云端代理；终端用户数量增长不得消耗项目维护者的 API 额度。
 - 所有动作都通过语义动作层执行，例如 `MoveForward`、`OpenMap`，不在任务代码中写死某个按键。
 - 每次动作后都要根据画面确认是否成功，不能假设按键已经生效。
-- 软件必须具备紧急停止、窗口焦点检查、失去识别时释放全部按键等安全机制。
+- 软件必须具备紧急停止、窗口焦点检查、失去识别时释放本软件仍保持按下的输入等安全机制。
+- 不创建 Windows Service，不以后台服务或隐藏进程运行捕获、识别、输入或凭据功能。
 
 ### 1.1 术语与指代
 
@@ -32,19 +33,20 @@
 - **BYOK**：终端用户自行提供用户凭据；不代表项目维护者代为申请、分发、托管或支付。
 - **本地基本功能**：无需云端 Provider 即可运行的窗口选择、画面捕获、已实现的本地识别、已支持任务的本地控制、紧急停止和安全降级；不承诺在无云端条件下理解所有未知任务。
 - **公开版本**：公开仓库中的代码和由项目维护者正式提供的发布产物，不包括贡献者本机的私有实验文件。
+- **公开可见源码**：任何人可以在公开仓库中查看的源码；在未添加代码许可证时不等同于开源授权。
 
 ## 2. 推荐总体技术栈
 
 ### 2.1 主程序
 
-- Windows 桌面端：C#、.NET 8、WPF。
+- Windows 桌面端：C#、.NET 10 LTS、WPF。
 - 本地数据库：SQLite。
-- 日志：结构化 JSON 日志 + 可选的短时画面回放缓冲区。
+- 日志：默认只记录经过字段白名单过滤的结构化 JSON 事件，不保存画面；预留容量和保留期限配置。短时画面回放若未来实现，必须由终端用户明确启用。
 - 图像处理：OpenCvSharp（OpenCV 的 .NET 封装）。
 - 模型推理：ONNX Runtime；Windows 新项目优先评估 WinML。
 - 第一阶段如本地 OCR/训练工具在 Python 中更容易验证，可增加独立 Python 工具，但正式运行核心应尽量收敛到 C#。
 
-选择 C# 的原因：Windows 窗口、权限、输入、安装包和后台服务处理更直接；模型可以导出 ONNX 后在本地运行。
+选择 C# 的原因：Windows 窗口、权限、输入和安装包处理更直接；模型可以导出 ONNX 后在本地运行。当前架构不创建 Windows Service，也不实现隐藏运行或后台服务。
 
 ### 2.2 Windows 系统接口
 
@@ -75,6 +77,8 @@
 ### 3.2 用户自带密钥的云端低频推理层（BYOK，可选）
 
 所有云端 Provider 必须采用 BYOK（Bring Your Own Key）模式：每位终端用户使用自己申请、自己拥有的 Provider 账户、项目和 API Key，其调用只消耗该终端用户自己的额度。项目维护者不向公开版本提供共享 Key，不建立默认的公共 API 中转服务，也不代终端用户承担调用费用。没有配置 Key 时，软件仍可运行术语表定义的本地基本功能。
+
+M0 只定义 `IAIProvider` 和 `IUserCredentialStore` 等抽象边界以及无凭据时不调用云端的默认行为，不引入 Gemini、Groq、OpenAI 或其他真实 Provider SDK，也不实现真实凭据保存。下表中的具体 Provider 仅是 M7 及以后重新审核的候选，不是 M0 依赖。
 
 | Provider | 初始角色 | 调用内容 | 不允许承担的职责 |
 | --- | --- | --- | --- |
@@ -121,6 +125,7 @@ SuggestRecovery(recentEvents) -> RecoveryPlan
 ```text
 GameState
   gameMode: Gameplay | Paused | Map | Menu | Cutscene | Loading | Failed | Unknown
+  menuSubstate: Settings | Other | None
   controlMode: OnFoot | Driving | Aiming | UI | Unknown
   missionId: optional
   missionStageId: optional
@@ -137,7 +142,49 @@ GameState
   observedAt
 ```
 
-状态不能由单一模型覆盖写入。每项证据带时间、来源和置信度，由 `StateEstimator` 统一融合。
+`Settings` 是 `Menu` 的子状态，不是顶层 `GameMode`。顶层模式必须使用上述固定集合，文档、接口、测试和适配器不得使用其他英文名称，也不得把 `Settings` 提升为顶层模式。
+
+`Evidence` 至少包含：
+
+```text
+Evidence
+  id
+  sourceType: LocalVision | OCR | MissionTracker | ActionResult | PersistedPrior | CloudCandidate | UserConfirmation | Unknown
+  observedAt
+  validUntil or ttl
+  targetField
+  candidateValue
+  fieldConfidence: 0..1
+  adapterId
+  adapterVersion
+  status: Fresh | Expired | Conflicting
+```
+
+每条证据必须能够追溯来源、观察时间和适配器版本。过期证据不能继续支撑输入决策；冲突证据必须保留并交由 `StateEstimator` 处理，不能由后到达的单一模型直接覆盖。`GameState.confidence` 只能作为整份快照的摘要值，不能单独决定是否允许输入。
+
+### 4.1 独立控制安全状态
+
+输入许可由独立且默认拒绝的 `ControlSafetyState` 决定，而不是直接由 `GameState.confidence` 决定：
+
+```text
+ControlSafetyState
+  captureTarget
+  inputTarget
+  windowIdentity
+  processIdentity
+  isInputTargetForeground
+  isCaptureHealthy
+  isStateFresh
+  isArmed
+  heldInputs[]
+  stopReason: optional
+```
+
+- Capture Target 与 Input Target 必须分离管理。捕获成功不代表允许输入。
+- 输入目标的窗口句柄、进程身份和前台状态必须在每个短动作批次前重新验证。
+- `heldInputs[]` 只记录本软件已发送且当前仍认为处于按下状态的按键和鼠标按钮。
+- `SendInput` 停止路径只能对 `heldInputs[]` 中的输入发送释放事件，不得向所有物理键盲目发送 key-up。
+- 紧急停止是锁存状态：触发后 `isArmed` 必须保持为 false、拒绝新动作并释放账本输入，只有终端用户明确重新 armed 后才能继续。
 
 ## 5. 如何确认“游戏进行到哪一步”
 
@@ -159,10 +206,17 @@ Mission
     completionEvidence[]
     failureEvidence[]
     recoveryOptions[]
+  transitions[]
+    fromStageId
+    toStageId
+    preconditions[]
+    completionEvidence[]
+    failureEvidence[]
+    terminalState: None | Completed | Failed | Aborted
   completionEvidence
 ```
 
-它只保存完成控制所必需的抽象信息和我们自己测试得到的数据，不复制整篇第三方攻略。
+每次任务阶段迁移必须明确来源阶段、目标阶段、前置条件、完成证据、失败证据和终止状态。任务知识库只保存完成控制所必需的抽象信息，以及由项目维护者或贡献者合法采集、测试并记录来源的数据，不复制整篇第三方攻略。
 
 ### 5.2 MissionTracker 的证据来源
 
@@ -182,6 +236,8 @@ unknown: 0.05
 ```
 
 当置信度不足时，系统应先执行信息收集动作，例如等待目标文字再次出现、查看小地图或安全地打开暂停地图，而不是继续任务。
+
+`MissionTracker` 只产生带证据的任务阶段候选，不直接修改 `GameState.missionStageId`。`StateEstimator` 负责将任务阶段候选与其他 Evidence 融合并生成统一、不可变的 `GameState` 快照。最近执行过的动作只能作为辅助证据，不能单独证明阶段完成。
 
 ### 5.3 存档和重新启动
 
@@ -204,7 +260,7 @@ unknown: 0.05
 
 ### 7.1 禁止写死按键
 
-任务逻辑只使用：
+输入层只接受原子语义输入。原子语义输入表示一次可绑定、可限时并可独立释放的输入意图，例如：
 
 ```text
 MoveForward
@@ -221,6 +277,8 @@ Back
 ```
 
 `InputBindingService` 再把语义动作转换为当前玩家实际键位。
+
+闭环技能由多个原子语义输入、观察和验证步骤组成，例如 `InspectMapSkill`、步行或驾驶控制。任务逻辑选择闭环技能，闭环技能只能通过语义输入层发出原子输入，不得直接使用物理键码。`OpenMap` 只有在当前绑定中确实是单一输入时才属于原子语义输入；进入地图、观察并安全恢复的完整过程始终属于 `InspectMapSkill`。
 
 ### 7.2 键位获取优先级
 
@@ -241,10 +299,10 @@ Back
 
 ## 8. 主动暂停和查看地图
 
-将查看地图实现为独立、可回滚的 `InspectMapSkill`：
+将查看地图实现为独立、可取消、可超时并可回滚的闭环 `InspectMapSkill`：
 
 1. 判断当前是否允许暂停；过场、载入、失败转换期不执行。
-2. 释放所有移动/鼠标按键。
+2. 释放本软件输入账本中仍处于按下状态的移动/鼠标输入。
 3. 执行语义动作 `OpenPauseMenu` 或 `OpenMap`。
 4. 等待并视觉确认已经进入 `Map` 模式。
 5. 识别玩家位置、目标标记和路线；必要时执行受限的缩放/平移。
@@ -253,6 +311,8 @@ Back
 8. 恢复前重新检查窗口焦点和任务状态。
 
 查看全地图不应固定周期执行。优先使用小地图；仅在目标未知、路线丢失、疑似卡住或任务阶段切换时打开全地图。
+
+如果 `InspectMapSkill` 被取消、超时、窗口失焦、捕获失败，或者无法确认已经恢复到原来的游戏状态，系统必须保持停止和未 armed 状态，释放本软件账本中的输入，不得自动恢复移动、镜头或其他输入。只有终端用户明确重新 armed 或后续安全恢复流程重新验证全部条件后，才可继续。
 
 ## 9. 现在就要预留的其他长期问题
 
@@ -264,8 +324,8 @@ Back
 
 ### 9.2 多种游戏模式
 
-- Gameplay、Map、Pause、Settings、Cutscene、Loading、Failed 必须是互斥的顶层模式。
-- 每个模式只允许有限动作。例如 Loading 状态只允许等待和紧急停止。
+- `Gameplay`、`Paused`、`Map`、`Menu`、`Cutscene`、`Loading`、`Failed`、`Unknown` 是互斥的顶层模式；`Settings` 是 `Menu` 的子状态，不是顶层模式。
+- 每个模式只允许有限动作。例如 `Loading` 状态只允许等待和紧急停止，`Unknown` 状态默认不允许自动输入。
 
 ### 9.3 卡住、失败和恢复
 
@@ -275,8 +335,8 @@ Back
 
 ### 9.4 数据采集与模型评估
 
-- 从第一天记录“观察 → 状态 → 动作 → 结果”，否则后期无法定位为什么失败。
-- 保存高价值失败片段，普通帧短期循环覆盖，避免磁盘无限增长。
+- 从第一天记录经过字段白名单过滤的“观察 → 状态 → 动作 → 结果”结构化事件，否则后期无法定位为什么失败。
+- 日志默认不保存截图、捕获帧或录像，并必须配置容量和保留期限。高价值失败片段或短时循环画面缓冲若未来实现，必须由终端用户明确启用，限制容量和保留时间，并与普通日志分开管理。
 - 建立固定测试录像，让视觉模块在不启动游戏时也能回归测试。
 - 每个里程碑都设置量化指标：识别准确率、误操作率、恢复成功率、平均 API 调用量。
 
@@ -289,6 +349,8 @@ Back
 ### 9.6 隐私与安全
 
 - 只捕获用户选择的游戏窗口。
+- Capture Target 与 Input Target 必须是分离的安全对象；捕获目标可见或捕获成功不代表输入目标可接受输入。
+- 每个短动作批次发送前都必须重新验证 Input Target 的窗口句柄、进程身份、前台状态、捕获健康和状态新鲜度。
 - 云端分析默认关闭，开启时明确显示上传范围。
 - 云端分析只能使用当前终端用户自行配置的 BYOK 凭据；不得使用项目维护者共享 Key 或默认公共代理。
 - 用户应能在设置中查看当前 Provider、测试连接、删除本机凭据并恢复为完全本地模式。
@@ -297,19 +359,20 @@ Back
 
 ### 9.7 GitHub 公开发布与资源边界
 
-- M0 至 M8 期间可以使用私有 GitHub 远程仓库协作或备份，但仍须遵守凭据和资源排除规则。
-- 将本仓库设为公开之前，必须完成最低公开门槛：检查全部 Git 历史和待上传文件中不存在凭据或受限资源；配置 `.gitignore`；添加 README 的项目边界与非官方声明；由项目维护者明确选择并添加 `LICENSE`，或明确说明代码尚未按开源许可证授权。
-- 在完成 M9 之前，不向公众提供安装包、预训练模型或其他正式发布产物；公开源代码仓库不等同于正式发布可安装版本。
+- 本仓库继续保持公开。每次推送前都必须按照 [`PUBLIC_REPOSITORY_CHECKLIST.md`](PUBLIC_REPOSITORY_CHECKLIST.md) 检查凭据、受限资源、构建产物和文档声明；公开可见不降低任何凭据和资源排除要求。
+- 当前没有 `LICENSE`。在项目维护者明确选择并添加代码许可证前，本仓库只能描述为公开可见源码，不得称为开源项目，也暂不接受需要合并代码的外部贡献。
+- 在完成 M9 对应发布检查之前，不向公众提供任何安装包，包括 Developer Preview 安装包，也不提供未经发布审计的预训练模型或其他发布产物；公开源代码仓库不等同于正式发布可安装版本。
 - 公开仓库不得包含游戏本体文件、可执行文件、用户存档、账户信息或未经授权分发的游戏素材。
 - 原始游戏截图、录像和由其制作的测试模板默认只保存在贡献者本机，不直接提交公开仓库；公开测试夹具优先使用自制、合成或已获明确授权的数据，并记录来源和许可证。
 - 不复制发布第三方攻略全文；任务知识库只保存软件运行必需的结构化事实和自行测试得到的状态证据。
 - `.gitignore` 必须覆盖本机凭据、屏幕录制、截图、崩溃转储、日志、模型缓存、存档和用户配置。
-- 引入依赖、模型、数据集或素材前记录名称、版本、来源、许可证及是否允许再分发。
+- 引入依赖、模型、数据集或素材前，在 [`THIRD_PARTY_INVENTORY.md`](THIRD_PARTY_INVENTORY.md) 记录名称、类型、版本、来源、许可证、修改与再分发权限以及是否进入源码仓库或安装包。
 - README 必须说明本项目并非 Rockstar Games 官方项目，也未获得其认可；上传公开 GitHub 仓库前以及每次正式发布前，都要复核适用的游戏条款、商标使用和开源许可证要求。
 
 ### 9.8 Windows 安装、快捷方式与 GitHub Releases
 
 - GitHub 仓库中的 `Source code.zip` 只包含源码，不作为普通终端用户的安装方式，也不能自动创建桌面快捷方式。
+- 所有公开安装包，包括 Developer Preview 安装包，都必须完成 M9 对应的发布检查；不得以“预览”或“测试”为理由绕过发布产物审计。
 - 正式安装版由 Windows 安装器生成；初始候选采用 Inno Setup，若后续需要 MSI/MSIX、企业部署或 Microsoft Store 再重新评估 WiX/MSIX。
 - 安装器默认创建开始菜单快捷方式，并在安装界面提供“创建桌面快捷方式”的可选复选框；桌面快捷方式应创建在当前终端用户的桌面，而不是所有用户的公共桌面，以避免不必要的管理员权限。
 - 快捷方式必须指向安装目录中的主程序 `.exe`，设置正确的工作目录和项目自有 `.ico` 图标；不得指向源码目录、`start.bat`、开发环境或临时构建目录。
@@ -333,9 +396,8 @@ src/
   Planning/            行为树、技能选择、恢复规划
   Skills/              步行、驾驶、菜单、地图等闭环技能
   InputMapping/        语义动作与实际键位
-  Providers/           BYOK 凭据边界、Gemini、Groq、本地 Provider 适配器
+  Providers/           BYOK Provider 抽象与后续经审核的可替换实现
   GameAdapters.GTA5/   GTA V 专属识别与任务配置
-  GameAdapters.GTA6/   未来占位，不提前实现猜测逻辑
   Persistence/         SQLite、日志、回放元数据
 installer/
   ProductName.iss      Windows 安装、卸载、开始菜单及可选桌面快捷方式
@@ -345,23 +407,27 @@ tests/
   Integration/
 ```
 
+该目录是长期模块规划，不要求 M0 一次创建。M0 只创建 Provider、凭据存储和 `IGameAdapter` 接口边界，不创建具体 Provider SDK/实现、GTA V 任务实现、GTA VI 工程或任何 GTA VI 占位参数。GTA VI Windows 版正式发布并可实际测试后，才能新增对应适配器工程。
+
 ## 11. 里程碑路线
 
 ### M0：仓库与安全骨架
 
-- 建立解决方案、模块边界、日志、配置、紧急停止。
-- 建立 `GameState`、`IGameAdapter`、`IInputController`、`IAIProvider`、`IUserCredentialStore` 接口。
+- 建立 .NET 10 LTS/WPF 解决方案、最小模块边界、字段白名单结构化日志、配置和锁存式紧急停止协调器。
+- 建立 `GameState`、`Evidence`、`ControlSafetyState`、`IGameAdapter`、`IInputController`、`IAIProvider`、`IUserCredentialStore` 接口。
+- 使用假窗口、假捕获状态、假输入控制器和假 Provider 建立可运行的安全测试；真实窗口选择、Windows Graphics Capture、前台 HWND/进程身份验证和 `SendInput` 实现不属于 M0。
+- M0 不实现真实 Provider 调用、真实凭据保存、GTA V 任务逻辑、GTA VI 工程或占位参数。
 - 加入自动检查，防止真实 API Key、共享维护者凭据或明文密钥配置进入仓库。
 - 建立覆盖凭据、截图、录像、日志、崩溃转储、存档和用户配置的 `.gitignore`，并定义测试数据的来源与许可证记录格式。
-- 建立“转为公开仓库前”检查清单；由项目维护者决定代码许可证后添加 `LICENSE`，在此之前保持远程仓库私有。
+- 建立并持续执行公开仓库检查清单；由项目维护者决定代码许可证后再添加 `LICENSE`。在此之前仓库可以公开，但只能描述为公开可见源码，不得称为开源项目。
 
 ### M1：最小闭环
 
 - 选择并识别 GTA V 窗口。
 - 捕获游戏窗口。
-- 区分 Gameplay / Pause / Map / Unknown。
+- 在统一顶层枚举中至少识别 `Gameplay` / `Paused` / `Map` / `Unknown`；`Settings` 仍只是 `Menu` 的子状态。
 - 在测试场景执行前进、转向、停止并验证结果。
-- 失焦或低置信度时释放所有输入。
+- 失焦或低置信度时释放本软件输入账本中仍处于按下状态的输入。
 
 ### M2：显示与键位校准
 
@@ -412,22 +478,22 @@ tests/
 - 完成 README 中的 BYOK 设置、完全本地模式、隐私边界、系统要求、离线模式限制及非官方项目声明。
 - 生成并测试 Windows 安装包：验证安装路径、开始菜单快捷方式、可选桌面快捷方式、图标、启动、覆盖升级和完整卸载。
 - 在干净的标准用户 Windows 账户中测试从 GitHub Releases 下载、安装、启动和卸载，不依赖 Visual Studio、VS Code、源码目录或开发机环境。
-- 验证安装包卸载、凭据删除、日志清理、紧急停止、自动更新和代码签名策略后，再进行公开推广。
+- 验证安装包卸载、凭据删除、日志清理、紧急停止和代码签名策略；若未来实现自动更新，则同时验证自动更新。全部适用检查通过后再进行公开推广。
 
 ## 12. 当前需要暂缓的决定
 
 - 安装器初始候选为 Inno Setup；具体产品名、安装范围、自动更新和代码签名方案在原型稳定后决定，若未来商业化还需重新核对安装器许可。
 - 具体本地检测模型：先采集真实 GTA V 样本并比较准确率、速度和许可证。
 - GTA VI 的 UI 模板、任务图和 PC 权限：等待官方 Windows 版及实际测试。
-- 收费方式、托管服务和商业化：在开源原型验证后再决定；GitHub 公开发布所需的资源边界、许可证审计和隐私要求按 M9 提前准备。
+- 收费方式、托管服务和商业化：在公开可见源码原型验证后再决定；GitHub 公开发布所需的资源边界、许可证审计和隐私要求按 M9 提前准备。
 
 ## 13. 下一步
 
-下一次开发会议应把 M0 拆成以下六项可独立审核的工作；首次 Codex 会话只规划，不实施：
+开始 M0 正式代码前，应把以下工作保持为可独立审核的步骤：
 
-1. 确认仓库名称、本地目录，以及首次推送使用私有还是公开 GitHub 可见性；若最低公开门槛尚未完成，只能先使用私有可见性。
-2. 创建 .NET 8/WPF 解决方案与上述核心模块的最小结构。
-3. 写出 `GameState`、`Evidence`、`IGameAdapter`、`IInputController`、`IAIProvider`、`IUserCredentialStore` 的首版接口，并把“无凭据时完全不调用云端”定义为默认行为。
-4. 建立紧急停止和“仅在选定窗口前台时输入”的自动测试边界。
+1. 确认当前远程仓库可见性和下一次推送条件；仓库继续保持 Public，每次推送前执行公开仓库检查清单。
+2. 创建 .NET 10 LTS/WPF 解决方案与经确认的最小核心模块结构。
+3. 写出 `GameState`、`Evidence`、`ControlSafetyState`、`IGameAdapter`、`IInputController`、`IAIProvider`、`IUserCredentialStore` 的首版接口，并把“无凭据时完全不调用云端”定义为默认行为。
+4. 使用假对象建立锁存式紧急停止、输入账本释放和默认拒绝的自动测试边界；真实 HWND 验证、窗口捕获和 `SendInput` 留到 M1。
 5. 建立 `.gitignore`、示例配置与测试夹具清单，保证凭据、存档、截图、录像、日志、崩溃转储和用户配置默认不进入本仓库。
-6. 规划仓库级密钥检查、依赖/模型/数据许可证清单及 README 中的 BYOK、离线模式和非官方项目说明；具体代码许可证由项目维护者确认后写入，并作为仓库转为公开前的必要条件。
+6. 规划仓库级密钥检查、依赖/模型/数据许可证清单及 README 中的 BYOK、离线模式和非官方项目说明；具体代码许可证只能由项目维护者确认后写入，在此之前不得称为开源项目或接受需要合并代码的外部贡献。

@@ -1,0 +1,111 @@
+# Visual Studio / VS Code / Rider user state
+/.vs/
+.vscode/*.user.json
+/.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+_ReSharper*/
+*.sln.iml
+
+# .NET build, test, coverage, package and publish output
+[Bb]in/
+[Oo]bj/
+[Tt]est[Rr]esults/
+/artifacts/
+/publish/
+/coverage/
+coverage.*
+*.coverage
+*.coveragexml
+*.trx
+/packages/
+*.nupkg
+*.snupkg
+
+# Installer and release staging output (installer source remains trackable)
+/installer/[Oo]utput/
+/installer/[Dd]ist/
+/installer/[Pp]ackages/
+/release-output/
+
+# Local environment files; documented examples remain trackable
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local configuration, credentials and secrets
+appsettings.Local.json
+appsettings.*.Local.json
+appsettings.*.local.json
+*.secrets.json
+secrets.json
+/.credentials/
+/credentials/
+/local-credentials/
+*.pfx
+*.p12
+*.key
+*.pem
+*.snk
+
+# Logs, diagnostics and crash dumps
+/logs/
+*.log
+*.log.*
+/crash-dumps/
+/CrashDumps/
+*.dmp
+*.dump
+*.mdmp
+
+# Local screenshots, captured frames and recordings
+/screenshots/
+/captures/
+/capture-frames/
+/recordings/
+/replays/
+/video-captures/
+/data/screenshots/
+/data/captures/
+/data/recordings/
+
+# GTA saves, account data and terminal-user configuration
+/gta-saves/
+/gta-savegames/
+/gta-account-data/
+/gta-user-config/
+/gta-profiles/
+/user-data/
+/local-user-data/
+/config/local/
+*.user.json
+
+# Local model and download caches
+/.cache/
+/model-cache/
+/models/cache/
+/models/downloads/
+/download-cache/
+/downloads/
+/.onnxruntime/
+
+# Private, unreviewed or restricted test data
+tests/private/
+tests/fixtures/private/
+tests/fixtures/unreviewed/
+test-data/private/
+test-data/unreviewed/
+
+# Approved fixture documentation and public synthetic/authorized fixtures stay trackable
+!tests/fixtures/README.md
+!tests/fixtures/public/
+!tests/fixtures/public/**
+
+# Operating-system metadata
+Thumbs.db
+Desktop.ini
+.DS_Store
