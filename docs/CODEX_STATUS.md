@@ -4,48 +4,37 @@
 
 ## 1. 最后更新时间
 
-2026-08-17 18:39:20 +08:00（Asia/Shanghai）
+2026-08-17 19:01:15 +08:00（Asia/Shanghai）
 
 ## 2. 当前开发阶段和正在处理的里程碑
 
-- 当前阶段：Developer Preview，架构设计与公开仓库安全准备阶段，尚无可执行原型。
-- 当前里程碑：M0 规划与准备；尚未开始正式 C# 实现。
+- 当前阶段：Developer Preview，架构设计与公开仓库安全准备已完成基础文档，尚无可执行原型。
+- 当前里程碑：准备实施 M0 第一个可审核切片；因当前环境没有可用的 .NET 10 SDK，在创建解决方案前已停止。
 
 ## 3. 本次任务目标
 
-创建本状态交接文件，并在 `AGENTS.md` 中增加每次开发、文档修改或审查任务完成后必须更新本文件的长期规则。
+创建 .NET 10 LTS 解决方案、最小 App/Core/Platform.Windows/Core.Tests 项目结构、核心领域契约及单元测试；在缺少 .NET 10 SDK 时必须停止且不得自行安装。
 
 ## 4. 已完成事项
 
-- 已统一 README、长期代理规则和架构文档中的 .NET 10 LTS、GameMode、公开可见源码、M0/M1 边界、M9 发布门槛和安全状态定义。
-- 已补充 `Evidence`、`ControlSafetyState`、MissionTracker/StateEstimator 职责、任务阶段迁移、输入账本、锁存式紧急停止、地图技能取消/超时、日志白名单以及 Capture Target/Input Target 分离规则。
-- 已建立公开仓库 `.gitignore`、公开仓库检查清单、第三方清单模板和测试夹具规则。
-- 已创建本状态文件并在 `AGENTS.md` 中加入强制更新规则。
-- 正式 M0 C# 代码、依赖、安装包、真实 Provider SDK、真实凭据存储、commit 和 push：均未执行。
+- 已读取 `AGENTS.md`、`README.md`、`docs/ARCHITECTURE.md`、公开仓库检查清单和本状态文件。
+- 开始任务时工作树干净，`main` 与本地记录的 `origin/main` 一致。
+- 已执行 .NET SDK 门槛检查；`dotnet --list-sdks` 退出码为 0 但没有输出任何 SDK，因此确认当前环境没有可用的 .NET 10 SDK。
+- 已按要求在创建文件前停止，没有安装 SDK，也没有创建解决方案、项目、领域代码或测试。
+- 真实捕获、输入、OCR、Provider、凭据存储、SQLite、游戏逻辑、安装程序、自动更新、commit 和 push：均未执行。
 
 ## 5. 修改或新增的文件
 
 当前工作树中的未提交文件：
 
-- 修改：`AGENTS.md`
-- 修改：`README.md`
-- 修改：`docs/ARCHITECTURE.md`
-- 新增：`.gitignore`
-- 新增：`docs/CODEX_STATUS.md`
-- 新增：`docs/PUBLIC_REPOSITORY_CHECKLIST.md`
-- 新增：`docs/THIRD_PARTY_INVENTORY.md`
-- 新增：`tests/fixtures/README.md`
+- 修改：`docs/CODEX_STATUS.md`
 
 ## 6. 执行的构建、测试和检查命令及结果
 
-- 构建：无。仓库尚无 C#、项目或解决方案文件。
-- 自动化测试：无。仓库尚无测试工程。
-- `git diff --check`：通过；仅有现有文档工作区 LF 将按 Git 配置转换为 CRLF 的提示，没有空白错误。
-- `.NET 8` 残留检查：通过，三份主文档中无残留。
-- GameMode 一致性检查：通过，三份主文档使用统一顶层枚举，`Settings` 仅为 `Menu` 子状态。
-- Markdown 本地链接检查：通过。
-- `.gitignore` 正反用例检查：通过；构建产物和私人数据被忽略，源码、Markdown 和公开夹具保持可跟踪。
-- C# 范围检查：通过；未创建 `.cs`、`.csproj` 或 `.sln` 文件。
+- `dotnet --list-sdks`：退出码 0、无输出；未发现任何已安装 SDK，.NET 10 SDK 门槛未满足。
+- `dotnet build`：未运行；SDK 门槛失败且没有解决方案。
+- `dotnet test`：未运行；SDK 门槛失败且没有测试项目。
+- `git diff --check`：通过；仅有 `docs/CODEX_STATUS.md` 工作区 LF 将按 Git 配置转换为 CRLF 的提示，没有空白错误。
 
 ## 7. 已确定的架构和产品决策
 
@@ -64,16 +53,17 @@
 
 ## 8. 尚未解决的问题或阻塞项
 
+- 阻塞项：当前环境没有可用的 .NET 10 SDK。根据本轮要求，Codex 不得自行安装；需要项目维护者在环境中提供 SDK 后才能继续。
 - 代码许可证尚未确定。
-- M0 的精确项目拆分、测试框架、密钥扫描工具和依赖版本尚未确定。
+- M0 的测试框架、密钥扫描工具和精确依赖版本尚未最终确定。
 - Windows Credential Manager 与 DPAPI 的最终选择尚未确定；真实实现属于 M7。
 - 具体云端 Provider、安装器细节、代码签名和自动更新方案尚未确定，均属于后续里程碑。
-- 当前无阻止文档与安全准备继续审查的技术阻塞项。
+- 除缺少 .NET 10 SDK 外，无其他已确认的当前阻塞项。
 
 ## 9. 工作树是否存在未提交修改
 
-是。当前存在第 5 节列出的未提交文档和公开仓库安全准备文件；没有 commit 或 push。
+是。仅 `docs/CODEX_STATUS.md` 因记录本次阻塞状态而有未提交修改；没有 commit 或 push。
 
 ## 10. 建议的下一项最小任务
 
-由项目维护者审查当前未提交的文档、安全准备文件和本状态文件；确认无误后，将它们作为仅包含文档与仓库安全准备的独立提交处理。执行下一次推送前，先逐项完成 `docs/PUBLIC_REPOSITORY_CHECKLIST.md` 中适用的检查。
+由项目维护者安装或提供可用的 .NET 10 SDK。随后重新运行 `dotnet --list-sdks`；确认出现 10.x SDK 后，再重新执行 M0 第一个可审核切片。本轮不要绕过 SDK 门槛，也不要降低构建和测试要求。
