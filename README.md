@@ -13,7 +13,7 @@ GTA Auto Gameplay 是一个实验性的 Windows 桌面软件项目。它计划�
 项目目前处于 **Developer Preview：M0 核心骨架阶段**：
 
 - 已建立 .NET 10 LTS 解决方案、可构建的 WPF 空壳、无 Windows API 依赖的核心项目、Windows 平台边界项目和核心单元测试项目。
-- 已建立首版 `GameMode`、`Evidence`、`GameState`、`ControlSafetyState` 及 Provider、凭据、输入和游戏适配器接口；这些仅是 M0 契约，不包含真实平台或云端实现。
+- 已建立首版 `GameMode`、`Evidence`、`GameState`、`ControlSafetyState`、锁存式安全协调器，以及 Provider、凭据、输入和游戏适配器接口；这些仅是 M0 核心能力，不包含真实平台或云端实现。
 - WPF 空壳可以构建，但不能选择或捕获游戏窗口，也不能识别游戏状态或发送输入；当前没有可供终端用户使用的自动化原型或安装包。
 - 当前没有经过验证的完整任务自动通关能力。
 - GitHub 仓库中的源码压缩包不是普通用户安装包，也不会自动创建桌面快捷方式。

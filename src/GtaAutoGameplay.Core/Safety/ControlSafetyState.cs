@@ -18,8 +18,14 @@ public sealed class ControlSafetyState
         bool isCaptureHealthy = false,
         bool isStateFresh = false,
         bool isArmed = false,
-        IEnumerable<InputToken>? heldInputs = null)
+        IEnumerable<InputToken>? heldInputs = null,
+        ControlStopReason stopReason = ControlStopReason.None)
     {
+        if (!Enum.IsDefined(stopReason))
+        {
+            throw new ArgumentOutOfRangeException(nameof(stopReason));
+        }
+
         CaptureTargetId = captureTargetId;
         InputTargetId = inputTargetId;
         CaptureWindowIdentity = captureWindowIdentity;
@@ -31,6 +37,7 @@ public sealed class ControlSafetyState
         IsStateFresh = isStateFresh;
         IsArmed = isArmed;
         _heldInputs = Array.AsReadOnly((heldInputs ?? []).ToArray());
+        StopReason = stopReason;
     }
 
     public string? CaptureTargetId { get; }
@@ -55,6 +62,8 @@ public sealed class ControlSafetyState
 
     public IReadOnlyList<InputToken> HeldInputs => _heldInputs;
 
+    public ControlStopReason StopReason { get; }
+
     public bool TargetsMatch =>
         HasValue(CaptureTargetId)
         && HasValue(InputTargetId)
@@ -63,12 +72,13 @@ public sealed class ControlSafetyState
         && string.Equals(CaptureWindowIdentity, InputWindowIdentity, StringComparison.Ordinal)
         && string.Equals(CaptureProcessIdentity, InputProcessIdentity, StringComparison.Ordinal);
 
-    public bool CanSendInput =>
-        IsArmed
-        && TargetsMatch
+    public bool MeetsInputSafetyConditions =>
+        TargetsMatch
         && IsInputTargetForeground
         && IsCaptureHealthy
         && IsStateFresh;
+
+    public bool CanSendInput => IsArmed && MeetsInputSafetyConditions;
 
     private static bool HasValue(string? value) => !string.IsNullOrWhiteSpace(value);
 }
