@@ -2,7 +2,7 @@
 
 本文件登记计划进入源码仓库、开发流程或发布产物的第三方依赖、模型、数据集、测试数据、字体、图标和其他素材。任何第三方项在引入前必须完成登记和审核；未知信息不得猜测，应填写“尚未核实”。
 
-当前状态：尚未引入正式代码依赖、模型或公开测试数据。
+当前状态：生产项目尚未引入第三方 NuGet 包、模型或公开测试数据；核心测试项目已引入下列测试专用 NuGet 包。直接依赖许可证已核实，传递依赖仍需逐项审核。
 
 ## 字段说明
 
@@ -21,7 +21,23 @@
 
 | 名称 | 类型 | 版本 | 来源 | 许可证 | 允许修改 | 允许再分发 | 进入源码仓库 | 进入安装包 | 审核状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 暂无 | — | — | — | — | — | — | — | — | 待首次依赖引入时更新 |
+| Microsoft.NET.Test.Sdk | NuGet 包（直接测试依赖） | 18.0.1 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/18.0.1) | MIT | 是 | 是，须遵守 MIT | 否，仅提交 `PackageReference` | 否 | 已审核（2026-08-18） |
+| MSTest.TestAdapter | NuGet 包（直接测试依赖） | 4.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/MSTest.TestAdapter/4.0.2) | MIT | 是 | 是，须遵守 MIT | 否，仅提交 `PackageReference` | 否 | 已审核（2026-08-18） |
+| MSTest.TestFramework | NuGet 包（直接测试依赖） | 4.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/MSTest.TestFramework/4.0.2) | MIT | 是 | 是，须遵守 MIT | 否，仅提交 `PackageReference` | 否 | 已审核（2026-08-18） |
+| Microsoft.ApplicationInsights | NuGet 包（传递测试依赖） | 2.23.0 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.ApplicationInsights/2.23.0) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.CodeCoverage | NuGet 包（传递测试依赖） | 18.0.1 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.CodeCoverage/18.0.1) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.Testing.Extensions.Telemetry | NuGet 包（传递测试依赖） | 2.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.Testing.Extensions.Telemetry/2.0.2) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.Testing.Extensions.TrxReport.Abstractions | NuGet 包（传递测试依赖） | 2.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.Testing.Extensions.TrxReport.Abstractions/2.0.2) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.Testing.Extensions.VSTestBridge | NuGet 包（传递测试依赖） | 2.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.Testing.Extensions.VSTestBridge/2.0.2) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.Testing.Platform.MSBuild | NuGet 包（传递测试依赖） | 2.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.Testing.Platform.MSBuild/2.0.2) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.Testing.Platform | NuGet 包（传递测试依赖） | 2.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.Testing.Platform/2.0.2) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.TestPlatform.AdapterUtilities | NuGet 包（传递测试依赖） | 18.0.1 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.TestPlatform.AdapterUtilities/18.0.1) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.TestPlatform.ObjectModel | NuGet 包（传递测试依赖） | 18.0.1 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.TestPlatform.ObjectModel/18.0.1) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Microsoft.TestPlatform.TestHost | NuGet 包（传递测试依赖） | 18.0.1 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.TestPlatform.TestHost/18.0.1) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| MSTest.Analyzers | NuGet 包（传递测试依赖） | 4.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/MSTest.Analyzers/4.0.2) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| Newtonsoft.Json | NuGet 包（传递测试依赖） | 13.0.3 | [NuGet 官方包页面](https://www.nuget.org/packages/Newtonsoft.Json/13.0.3) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+
+版本清单来自本轮成功恢复后生成的 `project.assets.json`，该文件位于被忽略的 `obj/` 目录，不提交到 Git。传递依赖在许可证逐项核实前不得改为“已审核”，也不得据此进入安装包。
 
 ## 单项审核记录模板
 

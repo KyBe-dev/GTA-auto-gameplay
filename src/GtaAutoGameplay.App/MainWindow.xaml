@@ -1,0 +1,21 @@
+<Window x:Class="GtaAutoGameplay.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GTA Auto Gameplay — M0"
+        Width="720"
+        Height="420"
+        MinWidth="480"
+        MinHeight="300"
+        WindowStartupLocation="CenterScreen">
+  <Grid Margin="32">
+    <StackPanel VerticalAlignment="Center">
+      <TextBlock FontSize="28"
+                 FontWeight="SemiBold"
+                 Text="Developer Preview" />
+      <TextBlock Margin="0,16,0,0"
+                 FontSize="16"
+                 TextWrapping="Wrap"
+                 Text="M0 application shell only. Game capture, recognition, and input automation are not implemented." />
+    </StackPanel>
+  </Grid>
+</Window>

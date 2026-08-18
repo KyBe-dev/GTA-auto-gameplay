@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>GtaAutoGameplay.App</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GtaAutoGameplay.Core\GtaAutoGameplay.Core.csproj" />
+    <ProjectReference Include="..\GtaAutoGameplay.Platform.Windows\GtaAutoGameplay.Platform.Windows.csproj" />
+  </ItemGroup>
+</Project>
