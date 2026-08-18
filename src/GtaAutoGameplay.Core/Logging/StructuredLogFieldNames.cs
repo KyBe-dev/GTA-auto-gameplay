@@ -28,4 +28,6 @@ public static class StructuredLogFieldNames
     public const string FrameReplayEnabled = "frameReplayEnabled";
     public const string LogCapacity = "logCapacity";
     public const string LogRetentionSeconds = "logRetentionSeconds";
+    public const string ProviderStatusCode = "providerStatusCode";
+    public const string ProviderResultType = "providerResultType";
 }

@@ -7,4 +7,5 @@ public enum StructuredLogCategory
     Input = 2,
     State = 3,
     Configuration = 4,
+    Provider = 5,
 }

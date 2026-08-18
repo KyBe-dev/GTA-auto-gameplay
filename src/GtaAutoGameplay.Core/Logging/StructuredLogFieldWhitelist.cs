@@ -47,6 +47,10 @@ public static class StructuredLogFieldWhitelist
                 StructuredLogFieldNames.FrameReplayEnabled,
                 StructuredLogFieldNames.LogCapacity,
                 StructuredLogFieldNames.LogRetentionSeconds),
+            [StructuredLogCategory.Provider] = CreateSet(
+                StructuredLogFieldNames.ProviderStatusCode,
+                StructuredLogFieldNames.ProviderResultType,
+                StructuredLogFieldNames.DurationMilliseconds),
         };
 
     public static bool IsAllowed(StructuredLogCategory category, string fieldName)
