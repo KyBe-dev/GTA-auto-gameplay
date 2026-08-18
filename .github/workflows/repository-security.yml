@@ -1,0 +1,48 @@
+name: Repository security
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Build, test, and scan
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up .NET from global.json
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore GtaAutoGameplay.sln
+
+      - name: Build Release
+        run: dotnet build GtaAutoGameplay.sln --configuration Release --no-restore
+
+      - name: Run all tests
+        run: dotnet test GtaAutoGameplay.sln --configuration Release --no-build --no-restore
+
+      - name: Scan candidate files and complete reachable history
+        run: >-
+          dotnet run
+          --project tools/GtaAutoGameplay.RepositoryGuard/GtaAutoGameplay.RepositoryGuard.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          --
+          --repository .
+          --history
+          --allowlist tools/repository-guard.allowlist.json

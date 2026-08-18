@@ -14,6 +14,7 @@ GTA Auto Gameplay 是一个实验性的 Windows 桌面软件项目。它计划�
 
 - 已建立 .NET 10 LTS 解决方案、可构建的 WPF 空壳、无 Windows API 依赖的核心项目、Windows 平台边界项目和核心单元测试项目。
 - 已建立首版 `GameMode`、`Evidence`、`GameState`、`ControlSafetyState`、锁存式安全协调器，以及 Provider、凭据、输入和游戏适配器接口；这些仅是 M0 核心能力，不包含真实平台或云端实现。
+- 已建立字段白名单内存日志、安全默认配置和独立仓库检查工具；仓库检查在本地和 GitHub Actions 中执行 Release 构建、全部测试、候选文件及完整可达 Git 历史扫描。
 - WPF 空壳可以构建，但不能选择或捕获游戏窗口，也不能识别游戏状态或发送输入；当前没有可供终端用户使用的自动化原型或安装包。
 - 当前没有经过验证的完整任务自动通关能力。
 - GitHub 仓库中的源码压缩包不是普通用户安装包，也不会自动创建桌面快捷方式。
@@ -130,6 +131,18 @@ M0 只建立架构、`GameState`/`Evidence` 领域模型、安全协调器、接
 开发按单个里程碑或可审查的子任务推进。任何改变安全边界、隐私策略、许可证、云端服务或发布方式的提案，都应先讨论和记录，不应直接并入实现。
 
 项目尚未确定完整的贡献流程。在代码许可证确定前，暂不接受需要合并代码的外部贡献。文档建议、问题报告以及未来的模型、数据集或素材提案，也必须先确认来源、许可证和再分发权限。
+
+### 仓库安全检查
+
+提交或推送前应运行：
+
+```powershell
+dotnet run --project tools/GtaAutoGameplay.RepositoryGuard --configuration Release -- --repository . --history --allowlist tools/repository-guard.allowlist.json
+```
+
+该工具只读取已经跟踪和未被 `.gitignore` 排除的候选文件；`--history` 还会检查所有本地可达分支与标签中的历史文件。发现项只显示路径、规则 ID 和安全说明，不显示完整疑似秘密值。允许列表只接受精确规则与精确文件路径，不允许目录通配豁免。
+
+这是项目自建的基础防线，不保证发现所有秘密，也不能替代成熟秘密扫描工具、GitHub Issue/PR/Actions/Release 托管内容检查或 M9 发布审计。完整规则和容量边界见 [`tools/GtaAutoGameplay.RepositoryGuard/README.md`](tools/GtaAutoGameplay.RepositoryGuard/README.md)。
 
 ## 许可证状态
 

@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E4A3DF17-08F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{872D9B65-A752-4195-A5F7-568692D07069}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{F2C2C7E0-2F3B-4512-9E66-DBE02D79F58B}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GtaAutoGameplay.App", "src\GtaAutoGameplay.App\GtaAutoGameplay.App.csproj", "{DA3B2F6E-2D59-4B66-90B7-BE4473B7A3C7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GtaAutoGameplay.Core", "src\GtaAutoGameplay.Core\GtaAutoGameplay.Core.csproj", "{5DF93CB4-8C50-4018-81A2-53CBB82DBE5D}"
@@ -14,6 +16,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GtaAutoGameplay.Platform.Windows", "src\GtaAutoGameplay.Platform.Windows\GtaAutoGameplay.Platform.Windows.csproj", "{F07591E3-4581-4DA9-A145-416CA2C98737}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GtaAutoGameplay.Core.Tests", "tests\GtaAutoGameplay.Core.Tests\GtaAutoGameplay.Core.Tests.csproj", "{B785317A-959E-41E8-A40E-4AC1099E314C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GtaAutoGameplay.RepositoryGuard", "tools\GtaAutoGameplay.RepositoryGuard\GtaAutoGameplay.RepositoryGuard.csproj", "{09110BA5-D6B7-4CC1-A066-C17D77B0BEB4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GtaAutoGameplay.RepositoryGuard.Tests", "tests\GtaAutoGameplay.RepositoryGuard.Tests\GtaAutoGameplay.RepositoryGuard.Tests.csproj", "{F5CA7A9A-05D1-4F79-B7F6-81B481338361}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,6 +43,14 @@ Global
 		{B785317A-959E-41E8-A40E-4AC1099E314C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B785317A-959E-41E8-A40E-4AC1099E314C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B785317A-959E-41E8-A40E-4AC1099E314C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09110BA5-D6B7-4CC1-A066-C17D77B0BEB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09110BA5-D6B7-4CC1-A066-C17D77B0BEB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09110BA5-D6B7-4CC1-A066-C17D77B0BEB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09110BA5-D6B7-4CC1-A066-C17D77B0BEB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5CA7A9A-05D1-4F79-B7F6-81B481338361}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5CA7A9A-05D1-4F79-B7F6-81B481338361}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5CA7A9A-05D1-4F79-B7F6-81B481338361}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5CA7A9A-05D1-4F79-B7F6-81B481338361}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,5 +60,7 @@ Global
 		{5DF93CB4-8C50-4018-81A2-53CBB82DBE5D} = {E4A3DF17-08F8-4327-8A40-D268B5D3C30B}
 		{F07591E3-4581-4DA9-A145-416CA2C98737} = {E4A3DF17-08F8-4327-8A40-D268B5D3C30B}
 		{B785317A-959E-41E8-A40E-4AC1099E314C} = {872D9B65-A752-4195-A5F7-568692D07069}
+		{09110BA5-D6B7-4CC1-A066-C17D77B0BEB4} = {F2C2C7E0-2F3B-4512-9E66-DBE02D79F58B}
+		{F5CA7A9A-05D1-4F79-B7F6-81B481338361} = {872D9B65-A752-4195-A5F7-568692D07069}
 	EndGlobalSection
 EndGlobal

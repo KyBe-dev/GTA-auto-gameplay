@@ -9,6 +9,7 @@
 - [ ] 已确认当前远程仓库仍为 Public，且本次推送不包含意外分支、标签或生成产物。
 - [ ] `git status` 中的每个新增、修改和删除文件都属于本次授权范围。
 - [ ] 已检查当前工作树、暂存区和待推送提交中不存在维护者 Key、用户 Key、密码、令牌、连接字符串、证书私钥或其他凭据。
+- [ ] 已运行 `dotnet run --project tools/GtaAutoGameplay.RepositoryGuard --configuration Release -- --repository . --history --allowlist tools/repository-guard.allowlist.json`，并处理所有失败项；没有把自建规则误当作完整秘密审计的替代品。
 - [ ] 远程 URL、脚本、配置模板和测试数据中没有嵌入凭据。
 - [ ] `.env`、本地秘密配置、凭据文件、日志、转储、截图、录像、存档、用户配置和缓存均被 `.gitignore` 排除。
 - [ ] 示例配置只包含明显不可用的占位符，不包含真实或看似可用的 Key。
@@ -22,6 +23,7 @@
 
 - [ ] 已使用能够扫描完整历史的工具检查所有本地可达分支和标签，而不是只扫描当前工作树。
 - [ ] CI 扫描使用完整 Git 历史，扫描输出对疑似秘密进行 redact。
+- [ ] `.github/workflows/repository-security.yml` 仍保持 `contents: read` 最小权限、完整历史 checkout、关闭凭据持久化，并把每个第三方 Action 固定到已审核的 40 位提交 SHA。
 - [ ] 如发现真实凭据，先由凭据所有者吊销或轮换，再处理历史；仅删除当前文件不视为修复。
 - [ ] 已检查 GitHub Issue/PR 正文与附件、Actions 日志与产物、缓存及历史 Releases 中没有凭据或受限资源。
 - [ ] GitHub Actions 使用最小权限；第三方 Action 固定到经过审核的版本或提交。

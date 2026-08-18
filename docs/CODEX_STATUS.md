@@ -4,81 +4,100 @@
 
 ## 1. 最后更新时间
 
-2026-08-18 18:02:05 +08:00（Asia/Shanghai）
+2026-08-18 18:47:26 +08:00（Asia/Shanghai）
 
 ## 2. 当前开发阶段和正在处理的里程碑
 
-- 当前阶段：Developer Preview，M0 核心骨架阶段；已有可构建的 WPF 空壳、核心领域契约、锁存式安全协调器、字段白名单结构化日志和基础运行配置边界，但尚无可用的游戏自动化原型。
-- 当前里程碑：M0。第一个核心契约切片已由项目维护者提交并推送；第二个安全协调器切片与第三个日志/配置切片已在本地完成验证，尚未提交或推送。
+- 当前阶段：Developer Preview，M0 仓库与安全骨架阶段；尚无可用的游戏自动化原型。
+- 当前里程碑：M0。核心领域契约、安全协调器、字段白名单日志、基础配置和仓库级密钥与受限资源自动检查切片均已完成本地验证。
+- 项目维护者已将安全协调器和日志/配置切片提交并推送到 `main`；当前 `HEAD`、`main` 和 `origin/main` 均为 `dd95d2607ba1f51791362f4fe64770ada9bda02d`。
 
 ## 3. 本次任务目标
 
-实施 M0 第三个独立切片：在 Core 中建立不依赖具体日志框架的字段白名单结构化日志、容量和保留期限受限的测试用内存日志、不可变且默认完全本地的运行配置，以及只返回防御性快照的内存配置来源；使用自动化测试验证默认拒绝、数据最小化和与安全停止锁存的隔离。
+实施 M0 的仓库级密钥与受限资源自动检查切片：建立与产品运行路径分离的只读扫描工具、精确允许列表、合成测试和最小权限 GitHub Actions 工作流，检查候选文件及完整可达 Git 历史，同时更新公开仓库安全文档和第三方清单。
 
 ## 4. 已完成事项
 
-- 已完整读取 `AGENTS.md`、`README.md`、`docs/ARCHITECTURE.md` 和本状态文件，并检查当前 Git 工作树与现有安全协调器实现。
-- 已确认当前 `HEAD` 为 `5db8bee06cc90260746228350460f080ac847c7b`，`main` 与 `origin/main` 一致；开始本任务时上一安全协调器切片仍为未提交修改，且差异检查通过。
-- 已定义稳定事件 ID、UTC 时间、日志级别、事件类别、结构化字段和值类型。
-- 日志字段按事件类别使用固定白名单；未知字段及 API Key、访问令牌、密码、原始 Provider 回复、OCR 原文、截图和桌面内容等明显敏感字段名默认拒绝。
-- 日志值 API 不接受任意 `object`，不使用反射序列化；只提供字符串、布尔、64 位整数、有限双精度数、非空 GUID 和 UTC 时间工厂，字符串上限为 256 个字符。
-- 已实现仅用于 M0 和测试的有界内存日志：容量满时按写入顺序淘汰最早事件，读取时按 UTC 观察时间清理超过保留期的事件，对外返回只读快照，不写文件、数据库、Event Log、网络或遥测服务。
-- 已实现不可变运行配置：安全默认值关闭云端 Provider、标记凭据未配置、关闭截图/录像/画面回放，并强制日志只使用字段白名单；默认容量为 512 个事件，默认保留期为 24 小时。
-- 日志容量只接受 1 至 100,000 个事件，保留期只接受 1 分钟至 30 天；未知配置枚举值默认拒绝，云端模式不能在未配置用户凭据引用时启用。
-- 已实现只保存不可变副本并返回防御性副本的内存配置来源；未读取 `appsettings`、环境变量、注册表、Credential Manager、DPAPI 或用户文件。
-- 已验证日志写入、日志读取和配置读取不会解除安全协调器的紧急停止锁存，也不会发送新动作。
-- 本切片没有新增第三方依赖，没有实现真实 Provider、凭据内容、Windows API、OCR、状态估计、任务逻辑、GTA VI 工程或任何 M1 平台能力。
+- 已完整读取 `AGENTS.md`、`README.md`、`docs/ARCHITECTURE.md`、`docs/CODEX_STATUS.md`、公开仓库检查清单、第三方清单、测试夹具说明、`.gitignore` 和当前解决方案。
+- 已确认任务开始时工作树干净，实际提交与项目维护者提供的 `dd95d2607ba1f51791362f4fe64770ada9bda02d` 一致。
+- 已新增独立 .NET 10 控制台工具 `GtaAutoGameplay.RepositoryGuard`；工具不被 WPF、Core 或 Windows 平台项目引用。
+- 扫描候选范围包括 Git 已跟踪文件和未被 `.gitignore` 排除的待提交文件；`--history` 检查所有本地可达分支和标签中的历史 blob。
+- 已建立 API Key/令牌赋值、常见访问令牌、私钥边界和 JWT 基础规则；输出只包含路径、规则 ID、历史对象短标识和安全说明，不打印匹配值。
+- 已建立本地秘密配置、证书私钥、GTA 本体/可执行文件/存档/账户数据、截图/录像/捕获帧、模型、构建输出、日志、转储和发布产物路径规则。
+- 单个文件超过 1,048,576 字节默认失败；不超过限制但包含 NUL 或不是有效 UTF-8 的文件按二进制默认失败。
+- 公开 `tests/fixtures/public/` 路径不做目录级豁免；普通安全文本可以通过，媒体、模型或二进制仍须精确审核。
+- 允许列表只接受已知规则 ID、精确文件路径和 10 至 300 字符的具体原因；拒绝通配符、目录路径、未知规则和重复条目。当前允许列表为空。
+- 候选符号链接或重解析点不会被跟随，避免读取仓库外路径；扫描器只使用只读 Git 命令，不修改、删除或上传仓库内容。
+- 合成秘密均在测试运行时拼接生成；已验证删除后的历史合成令牌仍能被发现，报告不泄露完整值，失败报告返回非零退出码。
+- 已新增 GitHub Actions 工作流：仅授予 `contents: read`，关闭 checkout 凭据持久化，使用 `fetch-depth: 0`，执行 Release 构建、全部测试和全历史扫描。
+- `actions/checkout` v6.0.2 固定到 `de0fac2e4500dabe0009e67214ff5f5447ce83dd`；`actions/setup-dotnet` v5.2.0 固定到 `c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7`。官方来源、MIT 许可证和完整标签 SHA 已核实并登记。
+- README、公开仓库检查清单和第三方清单已同步说明运行方式、CI 范围、容量边界和“基础防线不能替代成熟审计”的限制。
 
 ## 5. 修改或新增的文件
 
-- 当前工作树中的既有未提交修改：`README.md`、`src/GtaAutoGameplay.Core/Safety/ControlSafetyState.cs`。
-- 当前工作树中的既有安全协调器新增文件：`src/GtaAutoGameplay.Core/Safety/ControlSafetyCoordinator.cs`、`ControlSafetyException.cs`、`ControlStopReason.cs`、`IControlSafetyStateSource.cs`。
-- 当前工作树中的既有安全协调器测试文件：`tests/GtaAutoGameplay.Core.Tests/ControlSafetyCoordinatorTests.cs`、`Fakes/FakeControlSafetyStateSource.cs`、`Fakes/FakeInputController.cs`。
-- 本切片新增配置文件：`src/GtaAutoGameplay.Core/Configuration/CaptureDataOptions.cs`、`CloudProviderMode.cs`、`CredentialConfigurationState.cs`、`IRuntimeConfigurationSource.cs`、`InMemoryRuntimeConfigurationSource.cs`、`RuntimeConfiguration.cs`、`StructuredLogOptions.cs`。
-- 本切片新增日志文件：`src/GtaAutoGameplay.Core/Logging/IStructuredLogReader.cs`、`IStructuredLogSink.cs`、`InMemoryStructuredLog.cs`、`StructuredLogCategory.cs`、`StructuredLogEvent.cs`、`StructuredLogField.cs`、`StructuredLogFieldNames.cs`、`StructuredLogFieldWhitelist.cs`、`StructuredLogLevel.cs`、`StructuredLogLimits.cs`、`StructuredLogValue.cs`、`StructuredLogValueKind.cs`。
-- 本切片新增测试文件：`tests/GtaAutoGameplay.Core.Tests/RuntimeConfigurationTests.cs`、`StructuredLoggingTests.cs`。
-- 本切片修改：`docs/CODEX_STATUS.md`。
+- 修改：`GtaAutoGameplay.sln`
+- 修改：`README.md`
+- 修改：`docs/PUBLIC_REPOSITORY_CHECKLIST.md`
+- 修改：`docs/THIRD_PARTY_INVENTORY.md`
+- 修改：`docs/CODEX_STATUS.md`
+- 新增：`.github/workflows/repository-security.yml`
+- 新增：`tools/repository-guard.allowlist.json`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/GtaAutoGameplay.RepositoryGuard.csproj`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/Program.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/AllowlistEntry.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/GitRepositoryReader.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/README.md`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/RepositoryAllowlist.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/RepositoryFile.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/RepositoryGuardApplication.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/RepositoryGuardOptions.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/RepositoryGuardReporter.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/RepositoryGuardRuleIds.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/RepositoryScanner.cs`
+- 新增：`tools/GtaAutoGameplay.RepositoryGuard/ScanFinding.cs`
+- 新增：`tests/GtaAutoGameplay.RepositoryGuard.Tests/GtaAutoGameplay.RepositoryGuard.Tests.csproj`
+- 新增：`tests/GtaAutoGameplay.RepositoryGuard.Tests/RepositoryScannerTests.cs`
+- 新增：`tests/GtaAutoGameplay.RepositoryGuard.Tests/GitRepositoryReaderTests.cs`
+- 新增：`tests/GtaAutoGameplay.RepositoryGuard.Tests/WorkflowSecurityTests.cs`
+- 新增：`tests/GtaAutoGameplay.RepositoryGuard.Tests/TestAssemblyInfo.cs`
 
 ## 6. 执行的构建、测试和检查命令及结果
 
-- `git status --short --branch --untracked-files=all`、`git rev-parse HEAD`、`git diff --check` 和 `git diff --stat`：已确认基线提交和未提交安全协调器切片；开始任务时无空白错误。
-- `dotnet build GtaAutoGameplay.sln --configuration Release --force`：通过；4 个项目成功构建，0 警告、0 错误。
-- `dotnet test GtaAutoGameplay.sln --configuration Release --no-build --no-restore`：通过；60 个测试通过，0 失败，0 跳过。本切片新增 24 个展开后的测试用例。
+- `git status --short --branch --untracked-files=all`、`git rev-parse HEAD`、`git log -1 --oneline --decorate`：任务开始时工作树干净，`main` 与 `origin/main` 一致，提交为 `dd95d2607ba1f51791362f4fe64770ada9bda02d`。
+- `git ls-remote`：从两个 GitHub 官方 Action 仓库核实 v6.0.2 和 v5.2.0 的完整标签提交 SHA。
+- 首次沙箱内 Release 构建因无法访问 NuGet 漏洞元数据而失败；按授权重新联网恢复后成功获取元数据。随后发现并修正一个编译参数错误和 MSTest 并行化声明要求。
+- `dotnet build GtaAutoGameplay.sln --configuration Release --force`：最终通过；6 个项目成功构建，0 警告、0 错误。
+- `dotnet test GtaAutoGameplay.sln --configuration Release --no-build --no-restore`：最终通过；73 个测试通过，0 失败，0 跳过。其中原有 Core 测试 60 个，本切片新增扫描器/历史/工作流测试 13 个。
+- `dotnet run --project tools/GtaAutoGameplay.RepositoryGuard/GtaAutoGameplay.RepositoryGuard.csproj --configuration Release --no-build --no-restore -- --repository . --history --allowlist tools/repository-guard.allowlist.json`：通过；当前候选文件和完整本地可达历史无阻止项。
 - `git diff --check`：最终通过，无空白错误；仅显示工作区 LF 将按 Git 配置转换为 CRLF 的提示。
-- M0/M1 边界关键词检查：新增日志、配置和测试代码中没有文件日志、数据库、网络、遥测、Credential Manager、DPAPI、环境变量、注册表、`SendInput`、Windows Graphics Capture、HWND 或 P/Invoke 调用。
-- 依赖检查：Core 没有 `PackageReference`；测试项目只保留既有 Microsoft.NET.Test.Sdk 和 MSTest 包，本切片没有新增依赖。
+- 工作流自动测试确认：只有 `contents: read`、checkout 获取完整历史、凭据不持久化、两个第三方 `uses:` 均为 40 位小写十六进制 SHA。
+- `git --version`：开发机为 2.55.0.windows.3，已登记；CI Git 版本由 GitHub runner 提供并保留在运行日志。
 
 ## 7. 已确定的架构和产品决策
 
-- 仓库保持 Public；当前没有 `LICENSE`，只能称为公开可见源码，不属于开源发布，也暂不接受需要合并代码的外部贡献。
-- 主技术栈为 C#、.NET 10 LTS、WPF；Core 保持不依赖 Windows API。
-- 当前只支持 GTA V Windows 离线故事模式；不支持 GTA Online，不创建 GTA VI 工程或占位参数。
-- 不注入游戏进程、不读取或修改游戏内存、不使用内核驱动、不绕过反作弊、DRM 或平台保护。
-- 顶层 `GameMode` 为 `Gameplay | Paused | Map | Menu | Cutscene | Loading | Failed | Unknown`；`Settings` 是 `Menu` 子状态。
-- `GameState.Confidence` 只是摘要值；自动输入许可由独立安全状态和协调器 armed 锁存共同决定。
-- 捕获目标与输入目标分离；每个短动作批次前必须重新验证身份、前台、捕获健康和状态新鲜度。
-- 紧急停止是锁存状态，环境恢复不会自动解除；停止只释放协调器账本中的 `InputToken`。
-- 日志默认采用固定字段白名单和显式基础类型，不保存截图、帧、录像、原始 Provider 内容、未经筛选的 OCR 原文、凭据、账户、存档或桌面内容。
-- M0 内存日志同时受事件容量和时间保留期限制；容量满时淘汰最早写入事件，快照只读。
-- 安全默认配置完全本地：云端 Provider 关闭、凭据未配置、截图/录像/回放关闭；配置对象和配置来源均不可由调用者反向修改。
-- M0 只定义 Provider、凭据存储和游戏适配器边界；真实 Provider、凭据保存、文件配置、SQLite 和 Windows 平台实现属于后续里程碑。
-- 不创建 Windows Service，不隐藏运行；所有公开安装包必须通过 M9 对应发布检查，自动更新仍为条件式未来选项。
+- 仓库保持 Public；当前没有 `LICENSE`，只能称为公开可见源码，不属于开源发布。
+- 主技术栈为 C#、.NET 10 LTS、WPF；仓库检查工具是独立控制台项目，不进入正式应用运行路径或安装包。
+- 仓库检查工具只依赖 .NET 标准库和环境中已有的 Git CLI，没有新增 NuGet 依赖。
+- 扫描规则默认拒绝；允许列表必须精确到规则与文件，不能以通配符豁免目录。
+- 扫描报告永不显示完整匹配值；真实凭据一旦发现仍须先吊销或轮换，不能只依赖文件删除。
+- GitHub Actions 使用最小 `contents: read` 权限、完整历史、无持久化 checkout 凭据和固定完整提交 SHA。
+- 自建规则只是基础防线，不保证发现所有秘密，不替代成熟扫描器、GitHub 托管内容审查或 M9 发布审计。
+- 本切片不实现 Provider、凭据存储、窗口捕获、输入、OCR、状态估计、任务逻辑或 GTA VI 工程。
 
 ## 8. 尚未解决的问题或阻塞项
 
 - 无阻止继续 M0 的环境或代码阻塞项。
-- M0 尚未完成：Evidence 多帧融合/`StateEstimator` 边界、`MissionTracker` 阶段候选契约、无凭据时禁止调用 Provider 的独立策略测试、仓库级密钥与受限资源自动检查仍需后续独立切片。
-- 当前内存日志只用于 M0 测试，不进行任何持久化；持久化日志、目录、清理和用户设置均未设计或实现。
-- 真实窗口状态来源和真实输入控制器均未实现，按架构属于 M1。
+- 本地扫描只能检查本地可达 Git 历史和候选文件；GitHub Issue/PR 正文与附件、Actions 旧日志/产物、缓存和历史 Releases 仍需单独审核。
+- 自建模式库并不完整，后续公开或发布审计仍需评估成熟秘密扫描工具；本切片未新增此类第三方工具。
+- M0 尚未完成：无用户凭据时禁止调用 Provider 的独立门控与假 Provider 测试，以及架构中后续安排的 Evidence 融合/`StateEstimator`、`MissionTracker` 阶段候选边界仍需独立确认和切片。
 - 代码许可证尚未确定。
-- 既有测试包的传递依赖许可证和再分发条件尚未逐项核实。
-- Windows Credential Manager 与 DPAPI 的最终选择尚未确定；真实凭据存储属于 M7。
-- 具体云端 Provider、安装器细节、代码签名和自动更新方案尚未确定，均属于后续里程碑。
+- 既有测试包的传递依赖许可证和再分发条件仍未逐项核实。
+- 真实窗口、捕获和输入能力仍未实现，按架构属于 M1。
 
 ## 9. 工作树是否存在未提交修改
 
-是。当前 `HEAD` 仍为已经推送的 `5db8bee06cc90260746228350460f080ac847c7b`；工作树同时包含 M0 第二个安全协调器切片和第三个日志/配置切片的新增及修改文件，尚未 commit 或 push。构建输出位于 `.gitignore` 覆盖的 `bin/`、`obj/` 目录。
+是。当前 `HEAD` 仍为已推送的 `dd95d2607ba1f51791362f4fe64770ada9bda02d`；工作树只包含本次仓库级密钥与受限资源自动检查切片的新增和修改文件，尚未 commit 或 push。构建与测试输出由 `.gitignore` 排除。
 
 ## 10. 建议的下一项最小任务
 
-实施 M0 的仓库级密钥与受限资源自动检查切片：只增加可在本地和 GitHub Actions 中运行的只读扫描规则及合成测试样本，覆盖真实凭据模式、受限游戏资源和误报控制，不读取真实 Key、不上传数据，也不开始 M1 平台实现。
+实施 M0 的“无用户凭据时禁止调用云端 Provider”门控切片：只使用现有 `RuntimeConfiguration`、`IAIProvider` 和假 Provider 建立默认关闭、未配置凭据不调用、失败安全降级及调用计数测试，不接入任何真实 Provider SDK、API Key、网络请求或凭据存储。

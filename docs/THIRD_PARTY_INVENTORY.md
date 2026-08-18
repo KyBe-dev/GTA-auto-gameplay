@@ -36,6 +36,9 @@
 | Microsoft.TestPlatform.TestHost | NuGet 包（传递测试依赖） | 18.0.1 | [NuGet 官方包页面](https://www.nuget.org/packages/Microsoft.TestPlatform.TestHost/18.0.1) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
 | MSTest.Analyzers | NuGet 包（传递测试依赖） | 4.0.2 | [NuGet 官方包页面](https://www.nuget.org/packages/MSTest.Analyzers/4.0.2) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
 | Newtonsoft.Json | NuGet 包（传递测试依赖） | 13.0.3 | [NuGet 官方包页面](https://www.nuget.org/packages/Newtonsoft.Json/13.0.3) | 尚未核实 | 尚未核实 | 尚未核实 | 否 | 否 | 待审核 |
+| actions/checkout | GitHub Action（CI 直接依赖） | v6.0.2；`de0fac2e4500dabe0009e67214ff5f5447ce83dd` | [官方仓库固定提交](https://github.com/actions/checkout/tree/de0fac2e4500dabe0009e67214ff5f5447ce83dd) | MIT | 是 | 是，须遵守 MIT | 否，仅提交固定 SHA 引用 | 否 | 已审核（2026-08-18） |
+| actions/setup-dotnet | GitHub Action（CI 直接依赖） | v5.2.0；`c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7` | [官方仓库固定提交](https://github.com/actions/setup-dotnet/tree/c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7) | MIT | 是 | 是，须遵守 MIT | 否，仅提交固定 SHA 引用 | 否 | 已审核（2026-08-18） |
+| Git CLI | 开发与 CI 工具前置条件 | 开发机核验：2.55.0.windows.3；CI 版本由 GitHub runner 提供并记录在运行日志 | [Git 官方源码仓库](https://github.com/git/git) | GNU GPL v2；部分组件使用与 GPLv2 兼容的其他许可证 | 是，须遵守对应许可证 | 有条件，须遵守对应许可证；本项目不再分发 Git | 否 | 否 | 许可证来源已审核；CI 执行版本随环境记录 |
 
 版本清单来自本轮成功恢复后生成的 `project.assets.json`，该文件位于被忽略的 `obj/` 目录，不提交到 Git。传递依赖在许可证逐项核实前不得改为“已审核”，也不得据此进入安装包。
 
