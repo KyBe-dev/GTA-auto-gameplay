@@ -4,85 +4,88 @@
 
 ## 1. 最后更新时间
 
-2026-08-19 12:30:29 +08:00（Asia/Shanghai）
+2026-08-19 17:06:09 +08:00（Asia/Shanghai）
 
 ## 2. 当前开发阶段和正在处理的里程碑
 
-- 当前阶段：Developer Preview，M1 Windows 平台能力开发准备阶段；尚无可执行的游戏自动化原型。
-- 当前里程碑：M0 技术验收已经完成并提交；M1-A 至 M1-G 均尚未实现。
-- 当前切片：M1 开始前文档一致性收口，只同步状态、切片顺序、捕获边界和输入安全门。
-- Git 基线：任务开始时 `HEAD`、本地 `main` 和本地 `origin/main` 均为 `5f932d10bd8b7d6123ae2c6e03b1a4f43c17ae35`。任务开始时已有未提交文档：新增 `docs/M1_PLAN.md`、修改 `docs/CODEX_STATUS.md`。
+- 当前阶段：Developer Preview，M1 Windows 平台能力开发阶段；尚无可执行的游戏自动化原型。
+- 当前里程碑：M0 技术验收已经完成并提交；M1-A1“平台中立的窗口发现与选择契约”已完成但尚未提交。
+- 当前切片：M1-A1，只包含 Core 平台中立模型、发现/明确选择接口、类型化失败结果、测试假对象和单元测试。
+- Git 基线：任务开始及当前 `HEAD`、本地 `main`、本地 `origin/main` 均为 `c8ec95eafc4c4454f9426e9d87f9ef084b0fcaa3`。
 
 ## 3. 本次任务目标
 
-只修改 README、架构、M1 计划和交接状态文档，使它们一致说明 M0 已完成、M1 尚未实现、M1-A 至 M1-G 的固定顺序，以及所选窗口捕获、平台类型隔离、标准用户权限和受控测试窗口输入边界；不开始 M1-A。
+建立不可变且不暴露 Windows 原生类型的窗口候选、组合身份快照和明确选择契约，使后续 Windows 平台实现可以列出候选并由终端用户显式选择，同时对取消、过期、不可用和发现失败提供类型化结果；不实现 M1-A2 或任何真实平台能力。
 
 ## 4. 已完成事项
 
-- `README.md` 已从旧 M0 阶段状态更新为“Developer Preview：M1 Windows 平台能力开发准备阶段”，明确 M0 技术验收已经完成。
-- README 已明确当前仍没有真实游戏窗口捕获、真实前台身份验证、真实输入控制或 GTA 自动操作能力。
-- `docs/ARCHITECTURE.md` 更新日期和第 13 节已同步为 M1 当前状态与下一步，不再保留过时的 M0 启动步骤。
-- README 和架构文档已使用与 `docs/M1_PLAN.md` 一致的 M1-A 至 M1-G 名称和顺序。
-- 已统一终端用户明确选择窗口、不得自动选择 GTA 窗口、不得根据 GTA 标题或进程名自动控制，以及 Capture Target 与 Input Target 分离验证的要求。
-- 已统一 Core 不包含 HWND、`IntPtr`、`nint`、WinRT 或 Windows API 类型，原生资源只留在 Platform.Windows 的边界。
-- 已统一标准用户运行、高权限目标或身份不可验证时默认拒绝且不自动提权的要求。
-- 已统一 M1-E 通过前真实输入调用为零、M1-F/G 也只允许向项目自建独立受控测试窗口发送输入且不得向 GTA V 发送输入的要求。
-- 架构文档不再把 DXGI Desktop Duplication 列为 M1 备用方案；它只保留为 M1 之外的未来研究项，在满足隐私和目标窗口隔离要求前不得启用，也不得作为 WGC 失败回退。
-- `docs/M1_PLAN.md` 中原有的 README/架构待同步说明已替换为完成状态，但没有把任何 M1 能力写成已实现。
-- GTA Online 禁止、进程注入/内存读写/驱动/内核组件/反作弊和 DRM 绕过禁止保持不变。
-- 没有修改任何 `.cs`、项目、测试、工作流、依赖或许可证文件，没有实现 M1-A。
+- 新增独立强类型 `CandidateId` 与 `SelectionId`，两者不能在接口或模型中互换，且拒绝空 GUID。
+- 新增不可变 `WindowIdentitySnapshot`，组合保存 opaque 窗口实例、PID、opaque 进程实例、进程启动时间、窗口类名、仅文件名级可执行名称、opaque 可执行身份以及 UTC 快照有效期；标题或 PID 不被单独视为可信身份。
+- 新增不可变 `WindowCandidate` 和 `WindowSelection`。候选携带 UI 展示标题、进程名称和 PID；每次显式选择创建新的 `SelectionId`，不会复用旧选择。
+- 新增 `IWindowDiscovery`，将候选发现与显式选择分成两个调用；发现零个或一个候选都不会自动创建选择。
+- 新增 `WindowDiscoveryResult`、`WindowSelectionResult`、`WindowDiscoveryFailure` 和 `WindowSelectionFailure`，对取消、不可用、访问拒绝、枚举失败、元数据不完整、候选不存在和过期等情况返回枚举结果。
+- 发现结果对候选集合进行防御性复制并拒绝重复 `CandidateId`；模型属性均无公开 setter，过期边界以 UTC 时间确定。
+- 新增 `FakeWindowDiscovery` 和 19 个 M1-A1 测试用例，覆盖空/多候选、唯一 ID、ID 类型隔离、取消、过期、不可用、重复选择、单候选不自动选择、发现失败、不可变快照、防御性复制和平台类型隔离。
+- 没有实现或调用 Windows 窗口枚举、P/Invoke、捕获、前台验证、Capture Target、Input Target、armed、输入、OCR、Provider、网络或凭据功能。
+- M1-A2 尚未开始；没有修改 App、Platform.Windows、项目文件、依赖、许可证或架构文档。
 
 ## 5. 修改或新增的文件
 
-- 修改：`README.md`
-- 修改：`docs/ARCHITECTURE.md`
-- 新增且尚未提交：`docs/M1_PLAN.md`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/CandidateId.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/SelectionId.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/WindowCandidate.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/WindowIdentitySnapshot.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/WindowSelection.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/IWindowDiscovery.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/WindowDiscoveryFailure.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/WindowDiscoveryResult.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/WindowSelectionFailure.cs`
+- 新增：`src/GtaAutoGameplay.Core/Targeting/WindowSelectionResult.cs`
+- 新增：`tests/GtaAutoGameplay.Core.Tests/Fakes/FakeWindowDiscovery.cs`
+- 新增：`tests/GtaAutoGameplay.Core.Tests/WindowSelectionTests.cs`
 - 修改：`docs/CODEX_STATUS.md`
-- 生产代码、测试代码、项目文件、依赖和许可证：无修改。
 
 ## 6. 执行的构建、测试和检查命令及结果
 
-- Git 状态和基线检查：通过；实际提交基线为 `5f932d10bd8b7d6123ae2c6e03b1a4f43c17ae35`。
-- Markdown 相对链接检查：通过，当前四份主要文档中的相对文件目标均存在。
-- M0 过时状态搜索：通过；没有剩余把 M0 描述为尚未开始、待启动或当前开发阶段的表述。
-- M1 术语和边界检查：通过；四份文档对 M1-A 至 M1-G 顺序、明确选择、目标分离、Core 类型隔离、标准用户权限和输入限制的表述一致。
-- 当前候选文件仓库守卫扫描：通过，无阻止项。该自建扫描不能替代完整秘密扫描或 GitHub 托管内容审计。
+- `dotnet build GtaAutoGameplay.sln --configuration Release --force`：首次在受限网络中因无法读取 NuGet 漏洞元数据而失败；允许访问现有包源后完成还原并发现一项 MSTest 分析器错误，已按分析器要求修正测试断言。
+- `dotnet build GtaAutoGameplay.sln --configuration Release --no-restore`：通过，0 警告、0 错误。
+- `dotnet test GtaAutoGameplay.sln --configuration Release --no-build --no-restore`：通过；Core 150/150、RepositoryGuard 13/13，共 163/163，无跳过、无失败。
+- 当前候选文件仓库守卫扫描：通过，无阻止项；该基础扫描不能证明仓库绝对无秘密，也不能替代成熟秘密扫描审计。
 - `git diff --check`：通过，无空白错误。
-- 构建和测试：未运行。本次只修改 Markdown 文档，没有修改代码、项目或测试；为避免形式性执行，按任务要求不运行完整构建和测试。
+- Core 平台边界关键词检查：通过；M1-A1 生产文件没有 HWND、`IntPtr`、`nint`、P/Invoke、WinRT、WGC、`SendInput` 或 Windows SDK 类型。
+- M1-A1 功能边界检查：通过；没有网络、凭据、截图、捕获帧、Provider、键盘鼠标或输入实现，也没有新增第三方依赖。
 
 ## 7. 已确定的架构和产品决策
 
-- M0 技术验收已经完成并提交；M1 尚未实现，当前只是开发准备阶段。
-- M1 固定顺序为：A 窗口发现与明确选择、B 窗口与进程身份重新验证、C Windows Graphics Capture、D 最基础本地状态观察、E 前台目标和输入资格验证、F 真实输入控制器最小安全实现、G 最小闭环集成。
-- M1 只捕获终端用户明确选择的单个窗口，不自动选择 GTA 窗口，不以整桌面捕获作为失败回退。
-- Capture Target 与 Input Target 分离验证；捕获成功不授予输入资格。
-- Core 保持平台中立；Windows 原生类型和调用只存在于 Platform.Windows。
-- 软件保持标准用户权限；高权限目标、权限不足或身份无法验证时拒绝，不自动提权。
-- M1-E 通过前真实输入调用必须始终为零；M1-F/G 也只在独立受控测试窗口使用真实输入，不向 GTA V 发送输入。
-- 不支持 GTA Online，不注入、不读写游戏内存、不使用驱动或内核组件、不绕过反作弊、DRM 或平台保护。
-- DXGI Desktop Duplication 不属于 M1；未来研究必须先重新审查隐私与目标隔离。
-- 当前没有 `LICENSE`，仓库仍只能称为公开可见源码；公开安装包仍必须等待 M9。
+- M0 技术验收已经完成并提交；M1 按 A 至 G 的顺序分片实现。
+- M1-A1 只定义平台中立选择契约；原始窗口句柄及原生映射只能留在后续 Platform.Windows 实现中。
+- 窗口身份是窗口实例、PID、进程实例、进程启动时间、窗口类和可执行身份的组合；标题、PID 或进程名均不能单独证明身份。
+- 每次终端用户明确选择都创建新的 `SelectionId`；候选刷新、单候选或旧选择不能自动产生或恢复选择。
+- 可执行程序只跨 Core 边界提供文件名级展示值与 opaque 身份，不保存完整路径。
+- 当前不创建 Capture Target 或 Input Target，不查询前台，不 armed，不捕获，也不发送输入。
+- 不支持 GTA Online，不自动选择 GTA 窗口，不注入、不读写游戏内存、不使用驱动或内核组件、不绕过反作弊、DRM 或平台保护。
+- 当前没有 `LICENSE`，仓库只能称为公开可见源码；公开安装包仍必须等待 M9。
 
 ## 8. 尚未解决的问题或阻塞项
 
-- 阻止 M1-A 的文档问题：无。
-- M1-C 前仍需项目维护者确定最低 Windows 版本/构建号，并审核 WGC 的 SDK 接入方式和可能新增依赖。
-- M1-G 前仍需项目维护者确认明确 armed 的真实交互方式。
-- 受控测试窗口建议采用独立、仅测试用 WPF 项目；实施前仍需项目维护者确认。
-- 仅凭窗口和进程身份无法证明 GTA V 当前处于离线故事模式，因此 M1 不向 GTA V 发送输入。未来如需此类试验必须单独授权并先定义可验证的离线模式门。
-- 治理待决：代码许可证、测试传递依赖许可证和 GitHub 远程托管内容审计未完成；这些不阻止 M1-A，但阻止声称开源、接受需要合并的外部贡献或公开安装包。
+- 阻止提交 M1-A1 或开始 M1-A2 的技术问题：无。
+- M1-A2 尚未实现真实 Windows 顶层可见窗口枚举、原生句柄的仅内存映射或终端用户明确选择界面。
+- M1-B 及以后尚未实现窗口/进程身份重新验证、Capture Target、Input Target、前台状态或权限验证。
+- M1-C 及以后尚未实现 WGC、基础本地观察、安全门接入或受控测试窗口输入。
+- M1-C 前仍需项目维护者确定最低 Windows 版本/构建号，并审核 WGC SDK 接入方式和可能新增的依赖。
+- 治理待决：代码许可证、测试传递依赖许可证和 GitHub 远程托管内容审计未完成；这些不阻止本地 M1-A2 开发，但阻止声称开源、接受需要合并的外部贡献或公开安装包。
 
 ## 9. 工作树是否存在未提交修改
 
-是。当前未提交文件为：
+是。当前未提交文件为本次 M1-A1 的 12 个新增 C# 文件及本状态文件：
 
-- `README.md`
-- `docs/ARCHITECTURE.md`
+- `src/GtaAutoGameplay.Core/Targeting/` 下 10 个新增契约文件
+- `tests/GtaAutoGameplay.Core.Tests/Fakes/FakeWindowDiscovery.cs`
+- `tests/GtaAutoGameplay.Core.Tests/WindowSelectionTests.cs`
 - `docs/CODEX_STATUS.md`
-- `docs/M1_PLAN.md`（新增、未跟踪）
 
-没有未提交的生产代码、测试代码、项目文件、依赖或许可证修改。
+没有未提交的 App、Platform.Windows、项目、工作流、依赖、许可证或架构文档修改。
 
 ## 10. 建议的下一项最小任务
 
-M1-A“窗口发现与明确选择边界”。先实现平台中立、不可变的窗口候选/身份/选择契约和 Core 假对象测试，再独立实现可见顶层窗口枚举与终端用户明确选择 UI；完成时仍不得捕获、验证前台、armed 或发送输入。
+M1-A2：Windows 顶层可见窗口枚举与用户明确选择界面。只实现只读枚举、标题/进程名/PID 展示、终端用户明确选择和取消，以及 `SelectionId` 到原始句柄的 Platform.Windows 仅内存映射；仍不得捕获、验证前台、创建 Capture/Input Target、armed 或发送输入。
