@@ -8,12 +8,51 @@ public sealed class GameStateTests
     private static readonly DateTimeOffset ObservedAt = new(2026, 8, 18, 8, 0, 0, TimeSpan.Zero);
 
     [TestMethod]
+    public void ControlMode_DefinesOnlyDocumentedContexts()
+    {
+        string[] expected =
+        [
+            nameof(ControlMode.Unknown),
+            nameof(ControlMode.OnFoot),
+            nameof(ControlMode.Driving),
+            nameof(ControlMode.Aiming),
+            nameof(ControlMode.UI),
+        ];
+
+        CollectionAssert.AreEqual(expected, Enum.GetNames<ControlMode>());
+        CollectionAssert.AreEqual(
+            Enumerable.Range(0, expected.Length).ToArray(),
+            Enum.GetValues<ControlMode>().Select(value => (int)value).ToArray());
+    }
+
+    [TestMethod]
+    public void ObjectiveType_DefinesOnlyDocumentedObjectives()
+    {
+        string[] expected =
+        [
+            nameof(ObjectiveType.Unknown),
+            nameof(ObjectiveType.GoTo),
+            nameof(ObjectiveType.Follow),
+            nameof(ObjectiveType.Interact),
+            nameof(ObjectiveType.Drive),
+            nameof(ObjectiveType.Wait),
+            nameof(ObjectiveType.Search),
+        ];
+
+        CollectionAssert.AreEqual(expected, Enum.GetNames<ObjectiveType>());
+        CollectionAssert.AreEqual(
+            Enumerable.Range(0, expected.Length).ToArray(),
+            Enum.GetValues<ObjectiveType>().Select(value => (int)value).ToArray());
+    }
+
+    [TestMethod]
     public void Constructor_UsesSafeDefaults()
     {
         GameState state = new(ObservedAt);
 
         Assert.AreEqual(GameMode.Unknown, state.GameMode);
-        Assert.AreEqual(ControlMode.Manual, state.ControlMode);
+        Assert.AreEqual(ControlMode.Unknown, state.ControlMode);
+        Assert.AreEqual(ObjectiveType.Unknown, state.ObjectiveType);
         Assert.AreEqual(MenuSubstate.None, state.MenuSubstate);
         Assert.AreEqual(0d, state.Confidence);
         Assert.IsEmpty(state.Evidence);
@@ -37,6 +76,20 @@ public sealed class GameStateTests
     {
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new GameState(ObservedAt, confidence: confidence));
+    }
+
+    [TestMethod]
+    public void Constructor_RejectsUnknownControlMode()
+    {
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            new GameState(ObservedAt, controlMode: (ControlMode)999));
+    }
+
+    [TestMethod]
+    public void Constructor_RejectsUnknownObjectiveType()
+    {
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            new GameState(ObservedAt, objectiveType: (ObjectiveType)999));
     }
 
     [TestMethod]

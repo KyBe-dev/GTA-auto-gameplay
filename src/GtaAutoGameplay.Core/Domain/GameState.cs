@@ -9,7 +9,7 @@ public sealed class GameState
     public GameState(
         DateTimeOffset observedAt,
         GameMode gameMode = GameMode.Unknown,
-        ControlMode controlMode = ControlMode.Manual,
+        ControlMode controlMode = ControlMode.Unknown,
         MenuSubstate menuSubstate = MenuSubstate.None,
         string? missionId = null,
         string? missionStageId = null,

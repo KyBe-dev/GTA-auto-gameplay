@@ -3,11 +3,10 @@ namespace GtaAutoGameplay.Core.Domain;
 public enum ObjectiveType
 {
     Unknown = 0,
-    Navigate,
-    Interact,
-    EnterVehicle,
-    ExitVehicle,
+    GoTo,
     Follow,
-    Combat,
+    Interact,
+    Drive,
     Wait,
+    Search,
 }

@@ -3,10 +3,11 @@ namespace GtaAutoGameplay.Core.Domain;
 public enum EvidenceSourceType
 {
     Unknown = 0,
-    Vision,
+    LocalVision,
     Ocr,
     MissionTracker,
-    GameAdapter,
+    ActionResult,
+    PersistedPrior,
+    CloudCandidate,
     UserConfirmation,
-    AiProvider,
 }

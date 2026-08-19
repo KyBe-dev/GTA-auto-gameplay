@@ -8,6 +8,27 @@ public sealed class EvidenceTests
     private static readonly DateTimeOffset ObservedAt = new(2026, 8, 18, 8, 0, 0, TimeSpan.Zero);
 
     [TestMethod]
+    public void EvidenceSourceType_DefinesOnlyDocumentedSources()
+    {
+        string[] expected =
+        [
+            nameof(EvidenceSourceType.Unknown),
+            nameof(EvidenceSourceType.LocalVision),
+            nameof(EvidenceSourceType.Ocr),
+            nameof(EvidenceSourceType.MissionTracker),
+            nameof(EvidenceSourceType.ActionResult),
+            nameof(EvidenceSourceType.PersistedPrior),
+            nameof(EvidenceSourceType.CloudCandidate),
+            nameof(EvidenceSourceType.UserConfirmation),
+        ];
+
+        CollectionAssert.AreEqual(expected, Enum.GetNames<EvidenceSourceType>());
+        CollectionAssert.AreEqual(
+            Enumerable.Range(0, expected.Length).ToArray(),
+            Enum.GetValues<EvidenceSourceType>().Select(value => (int)value).ToArray());
+    }
+
+    [TestMethod]
     [DataRow(0d)]
     [DataRow(1d)]
     [DataRow(0.5d)]
@@ -50,9 +71,25 @@ public sealed class EvidenceTests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new Evidence(
                 Guid.NewGuid(),
-                EvidenceSourceType.Vision,
+                EvidenceSourceType.LocalVision,
                 ObservedAt,
                 ObservedAt.AddTicks(-1),
+                "GameMode",
+                "Gameplay",
+                0.8d,
+                "test-adapter",
+                "1.0.0"));
+    }
+
+    [TestMethod]
+    public void Constructor_RejectsUnknownSourceType()
+    {
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            new Evidence(
+                Guid.NewGuid(),
+                (EvidenceSourceType)999,
+                ObservedAt,
+                ObservedAt.AddSeconds(5),
                 "GameMode",
                 "Gameplay",
                 0.8d,
@@ -65,7 +102,7 @@ public sealed class EvidenceTests
         EvidenceStatus status = EvidenceStatus.Fresh) =>
         new(
             Guid.NewGuid(),
-            EvidenceSourceType.Vision,
+            EvidenceSourceType.LocalVision,
             ObservedAt,
             ObservedAt.AddSeconds(5),
             "GameMode",
