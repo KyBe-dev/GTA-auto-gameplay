@@ -4,75 +4,84 @@
 
 ## 1. 最后更新时间
 
-2026-08-19 11:39:14 +08:00（Asia/Shanghai）
+2026-08-19 12:04:12 +08:00（Asia/Shanghai）
 
 ## 2. 当前开发阶段和正在处理的里程碑
 
 - 当前阶段：Developer Preview，M0 仓库与安全骨架阶段；尚无可执行的游戏自动化原型。
-- 当前里程碑：M0 收口。
-- 当前切片：`EvidenceSourceType`、`ControlMode` 和 `ObjectiveType` 领域契约对齐，已完成本地实现和验证，尚未提交或推送。
-- Git 基线：任务开始时工作树干净，`HEAD`、本地 `main` 和本地 `origin/main` 均为 `0ac22234684063730184f07ddb724c0b6827fb05`；只读 `git ls-remote` 已确认 GitHub 远程 `main` 也是该提交。此前 Provider 门控、仓库守卫和验收状态均已提交并推送。
+- 当前里程碑：M0 技术验收通过，准备规划 M1。
+- 当前切片：纯 Core 的最小多帧 Evidence 融合与 `StateEstimator`，已完成本地实现和验证，尚未提交或推送。
+- Git 基线：任务开始时工作树干净；当前 `HEAD`、本地 `main` 和本地 `origin/main` 均为 `35c4ed168a656761668ab0598e3d2bac8c6fecb3`。此前领域枚举对齐切片已经提交并推送。
 
 ## 3. 本次任务目标
 
-只修正 M0 的三个领域枚举及其直接引用和测试，使 `EvidenceSourceType`、`ControlMode`、`ObjectiveType` 与 `docs/ARCHITECTURE.md` 的统一 `Evidence`/`GameState` 定义一致；不实现 `StateEstimator`、`MissionTracker`、平台能力或其他里程碑内容。
+只在 Core 中实现可测试、确定且默认拒绝的多帧 Evidence 融合与 `StateEstimator`，融合 `GameMode`、`ControlMode`、`MenuSubstate` 和 `ObjectiveType`；不进入视觉、OCR、任务逻辑、Provider、持久化、Windows 平台或输入实现。
 
 ## 4. 已完成事项
 
-- 已完整读取 `AGENTS.md`、`README.md`、`docs/ARCHITECTURE.md` 和任务开始时的 `docs/CODEX_STATUS.md`，并确认主要文档已经使用权威值，无需重复修改。
-- `EvidenceSourceType` 已对齐为 `Unknown = 0 | LocalVision | Ocr | MissionTracker | ActionResult | PersistedPrior | CloudCandidate | UserConfirmation`。
-- `ControlMode` 已对齐为 `Unknown = 0 | OnFoot | Driving | Aiming | UI`，并保持其语义只表示角色/操作上下文。
-- `ObjectiveType` 已对齐为 `Unknown = 0 | GoTo | Follow | Interact | Drive | Wait | Search`。
-- 已删除旧枚举成员，没有保留枚举别名，也没有增加字符串转换兼容层。
-- `GameState` 的默认 `ControlMode` 已从旧的 `Manual` 改为 `Unknown`；默认 `ObjectiveType` 继续为 `Unknown`。
-- 已检查 `GameState`、`Evidence`、`AIStateCandidate`、Provider 门控、日志字段和测试假对象；只有 `GameState` 默认值和两个既有领域测试文件需要引用调整，Provider 与日志边界无需修改。
-- 已为三个枚举增加精确名称和连续数值集合测试，并增加非法 `EvidenceSourceType`、`ControlMode`、`ObjectiveType` 的构造拒绝测试。
-- 已确认旧限定枚举成员和旧领域枚举定义均无残留。`SemanticAction.EnterVehicle`/`ExitVehicle` 是独立语义输入动作，不属于已删除的 `ObjectiveType` 成员，因此保留。
-- 本轮未增加依赖，未修改安全协调器、Provider 门控、日志策略、工作流、扫描规则、README、架构文档或许可证文件。
+- 新增 `IStateEstimator`、`StateEstimator`、`StateEstimatorOptions`、`StateEstimationResult`，以及字段决策、候选支持和 Evidence 审计类型。
+- 稳定目标字段名统一为区分大小写的 `gameMode`、`controlMode`、`menuSubstate`、`objectiveType`；未知字段、未知枚举值、旧枚举名、数字值和大小写不一致值均被拒绝，不做隐式映射。
+- 默认配置要求每个候选至少有 2 个不同 Evidence ID、2 个不同观察时间、累计支持度至少为 1.0；阈值和时间窗口全部集中在不可变 `StateEstimatorOptions` 中并验证。
+- Evidence 按当前评估时间、5 秒默认观察窗口、有效期、冲突状态以及精确的 adapter ID/版本过滤；未来、过期、窗口外、适配器不匹配、重复 ID、无效候选和不支持字段均保留明确审计原因。
+- 同一 Evidence ID 的全部重复项均不计数，避免输入顺序决定哪一份重复证据生效。
+- 候选支持度按字段和候选值分别聚合；两个合格候选的支持度都达到 1.0 且差值不超过 0.15 时，字段回退安全默认值并标记冲突，不使用最后到达者覆盖。
+- 上一快照默认最多保留 5 秒且摘要置信度至少为 0.5；切换优势默认要求 0.25。只有上一值仍有满足多帧门槛的当前支持时才允许滞回保留，否则回退安全默认值或接受具有足够优势的新候选。
+- `CloudCandidate` 只在同一字段、同一候选存在至少一条非云端独立 Evidence 时参与；纯云端候选不能定案，`StateEstimator` 不调用 `IAIProvider`。
+- 输出为新的不可变 `GameState`；本切片未融合字段保持空值或安全默认值。`GameMode` 不是 `Menu`（包括 `Unknown`）时强制将 `MenuSubstate` 清为 `None`。
+- `GameState.Confidence` 是四个字段决策置信度的平均摘要并限制在 0 到 1，不复制单条最高置信度，不接触或改变安全协调器状态，也不能单独授权输入。
+- 结果中的字段决策、候选 Evidence ID、Evidence 审计和 `GameState.Evidence` 均为防御性只读快照；实现不保存共享可变状态，并发相同输入得到确定结果。
+- 已新增 35 个 Core 测试用例，覆盖空输入、单帧拒绝、多帧确认、重复 ID、时效、适配器隔离、严格枚举解析、冲突、优势、滞回、云端确认、跨字段一致性、只读快照、摘要置信度、安全锁存和并发确定性。
+- 未增加或升级第三方依赖，未修改安全协调器、Provider 门控、平台项目、工作流、扫描规则、README、架构文档或许可证文件。
 
 ## 5. 修改或新增的文件
 
-- 修改：`src/GtaAutoGameplay.Core/Domain/EvidenceSourceType.cs`
-- 修改：`src/GtaAutoGameplay.Core/Domain/ControlMode.cs`
-- 修改：`src/GtaAutoGameplay.Core/Domain/ObjectiveType.cs`
-- 修改：`src/GtaAutoGameplay.Core/Domain/GameState.cs`
-- 修改：`tests/GtaAutoGameplay.Core.Tests/EvidenceTests.cs`
-- 修改：`tests/GtaAutoGameplay.Core.Tests/GameStateTests.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/IStateEstimator.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateEstimator.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateEstimatorOptions.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateEstimationResult.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateField.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldNames.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldDecision.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldDecisionStatus.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldDecisionReason.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateCandidateSupport.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/EvidenceAuditEntry.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/EvidenceAuditStatus.cs`
+- 新增：`src/GtaAutoGameplay.Core/StateEstimation/EvidenceRejectionReason.cs`
+- 新增：`tests/GtaAutoGameplay.Core.Tests/StateEstimatorTests.cs`
 - 修改：`docs/CODEX_STATUS.md`
-- 新增文件：无。
 
 ## 6. 执行的构建、测试和检查命令及结果
 
-- Git 状态与远程检查：任务开始时工作树干净；本地和远程 `main` 均为 `0ac22234684063730184f07ddb724c0b6827fb05`。
-- `dotnet build GtaAutoGameplay.sln --configuration Release --force`：首次因沙箱无法访问 NuGet 漏洞元数据而出现 `NU1900`；联网重跑后发现三个直接 `Unknown == 0` 断言被 MSTest 分析器判为恒真。改为完整动态数值序列检查后最终构建通过，6 个项目，0 警告、0 错误；未新增或升级依赖。
-- `dotnet test GtaAutoGameplay.sln --configuration Release --no-build --no-restore`：通过；Core 96 个、Repository Guard 13 个，共 109 个测试，0 失败、0 跳过。本切片新增 6 个测试。
+- `dotnet build GtaAutoGameplay.sln --configuration Release --force`：通过；6 个项目，0 警告、0 错误。
+- `dotnet test GtaAutoGameplay.sln --configuration Release --no-build --no-restore`：通过；Core 131 个、Repository Guard 13 个，共 144 个测试，0 失败、0 跳过。本切片新增 35 个 Core 测试。
 - 当前候选文件仓库守卫扫描：通过，无阻止项。
 - 完整本地可达分支和标签历史扫描：通过，无阻止项。自建扫描仍不能证明仓库绝对无秘密，也不能替代成熟扫描工具或 GitHub 托管内容审计。
-- `git diff --check`：通过，无空白错误；仅有工作区文件下次由 Git 触碰时从 LF 转换为 CRLF 的提示。
-- 旧值检查：无 `EvidenceSourceType.Vision/GameAdapter/AiProvider`、`ControlMode.Manual/Assisted/Automated/Suspended` 或 `ObjectiveType.Navigate/EnterVehicle/ExitVehicle/Combat` 限定引用；领域枚举定义中也无旧成员。
-- M0/M1 边界关键词检查：产品源码无 HWND、Windows Graphics Capture、`SendInput`、P/Invoke、网络、真实凭据、SQLite、OCR、`StateEstimator` 或 `MissionTracker` 实现。
+- M0/M1 边界关键词检查：生产态 `StateEstimation` 代码没有网络、文件、数据库、Windows API、Provider SDK、凭据或真实输入依赖；测试只引用假 Provider 和假输入控制器来证明调用次数为 0 且紧急停止锁存不变。
+- `git diff --check`：通过，无空白错误。
 
 ## 7. 已确定的架构和产品决策
 
-- 三个领域枚举的权威集合以本文件第 4 节及 `docs/ARCHITECTURE.md` 为准。
-- C# 使用 `Ocr` 对应架构文档中的 OCR；这只是命名风格差异，不是语义差异。
-- `ControlMode` 表示游戏中的角色/操作上下文，不表示软件自动化等级；本轮不创建 Manual/Assisted/Automated 等新概念。
-- `GameState` 的 `ControlMode` 和 `ObjectiveType` 默认值均为 `Unknown`。
-- 本轮不实现多帧融合、`StateEstimator`、`MissionTracker`、真实 Provider/凭据、Windows 平台能力或 GTA 任务逻辑。
-- 当前没有 `LICENSE`，仓库只能称为公开可见源码；许可证仍是治理待决事项，不是本次领域代码缺陷。
+- M0 的纯 Core 多帧融合只处理 `GameMode`、`ControlMode`、`MenuSubstate` 和 `ObjectiveType`；任务 ID、阶段、OCR 文本、目标位置、角色和输入配置不在本切片融合范围。
+- `StateEstimator` 采用简单、确定、可解释的时间窗口、累计支持、冲突门槛和滞回规则；这些默认参数只用于领域边界和假对象测试，不代表已经适用于真实 GTA V 画面。
+- Evidence 必须匹配当前 adapter ID 和版本；不同适配器或版本的数据不能混合，为未来适配器保持隔离。
+- 云端候选只能提供结构化候选 Evidence，不能独立定案、发送输入或改变安全协调器状态。
+- `GameState.Confidence` 继续只作为摘要值，输入资格仍由独立、默认拒绝的 `ControlSafetyCoordinator` 和 `ControlSafetyState` 决定。
+- M0 技术验收通过；真实窗口选择、Windows Graphics Capture、前台 HWND/进程验证和 `SendInput` 仍属于 M1，不应回填到 M0。
+- 当前没有 `LICENSE`，仓库只能称为公开可见源码；许可证仍是治理待决事项，不是运行功能缺陷。
 
 ## 8. 尚未解决的问题或阻塞项
 
-- M0 已知剩余技术缺口：纯 Core 的最小 `StateEstimator` 多帧证据融合边界及测试尚未实现。
-- 除 `StateEstimator` 多帧融合外，本次复核没有发现其他尚未解决的 M0 技术缺口。
+- M0 技术缺口：无。基于当前权威文档、既有 M0 验收审查和本切片验证，M0 技术验收通过。
 - 治理待决：代码许可证尚未选择，因此不得接受需要合并代码的外部贡献、声称开源或发布安装包。
-- 治理待决：测试传递依赖许可证尚未逐项核实，M9 发布审计不能据此通过。
-- GitHub Issue/PR 附件、Actions 历史产物、缓存和 Releases 等远程托管内容不在本地仓库守卫扫描范围内。
+- 治理待决：测试传递依赖许可证尚未逐项核实；公开发布安装包前必须完成相应许可证与再分发审计。
+- 治理待决：GitHub Issue/PR 附件、Actions 历史产物、缓存和 Releases 等远程托管内容不在本地仓库守卫扫描范围内，仍需项目维护者按公开仓库与 M9 清单审计。
+- 阻塞项：无。上述治理事项不阻止本地规划和开发 M1，但继续接受外部贡献、声称开源或公开安装包仍受现有规则限制。
 
 ## 9. 工作树是否存在未提交修改
 
-是。工作树只包含本次三个领域枚举、`GameState` 默认值、对应测试和本状态文档的修改，尚未 commit 或 push。构建与测试输出由 `.gitignore` 排除。
+是。工作树包含本次新增的纯 Core StateEstimator 契约、实现、测试以及本状态文档修改，尚未 commit 或 push；构建和测试输出由 `.gitignore` 排除。
 
 ## 10. 建议的下一项最小任务
 
-纯 Core 的最小 StateEstimator 多帧融合切片。
+先进行只读的 M1 分步规划。建议首个候选实施切片是“用户可见的 GTA V 窗口发现与明确选择边界”：只建立 Windows 平台的窗口枚举、进程/窗口身份只读快照、选择结果和假对象测试，不同时实现画面捕获、前台输入验证或 `SendInput`。
