@@ -4,84 +4,85 @@
 
 ## 1. 最后更新时间
 
-2026-08-19 12:04:12 +08:00（Asia/Shanghai）
+2026-08-19 12:30:29 +08:00（Asia/Shanghai）
 
 ## 2. 当前开发阶段和正在处理的里程碑
 
-- 当前阶段：Developer Preview，M0 仓库与安全骨架阶段；尚无可执行的游戏自动化原型。
-- 当前里程碑：M0 技术验收通过，准备规划 M1。
-- 当前切片：纯 Core 的最小多帧 Evidence 融合与 `StateEstimator`，已完成本地实现和验证，尚未提交或推送。
-- Git 基线：任务开始时工作树干净；当前 `HEAD`、本地 `main` 和本地 `origin/main` 均为 `35c4ed168a656761668ab0598e3d2bac8c6fecb3`。此前领域枚举对齐切片已经提交并推送。
+- 当前阶段：Developer Preview，M1 Windows 平台能力开发准备阶段；尚无可执行的游戏自动化原型。
+- 当前里程碑：M0 技术验收已经完成并提交；M1-A 至 M1-G 均尚未实现。
+- 当前切片：M1 开始前文档一致性收口，只同步状态、切片顺序、捕获边界和输入安全门。
+- Git 基线：任务开始时 `HEAD`、本地 `main` 和本地 `origin/main` 均为 `5f932d10bd8b7d6123ae2c6e03b1a4f43c17ae35`。任务开始时已有未提交文档：新增 `docs/M1_PLAN.md`、修改 `docs/CODEX_STATUS.md`。
 
 ## 3. 本次任务目标
 
-只在 Core 中实现可测试、确定且默认拒绝的多帧 Evidence 融合与 `StateEstimator`，融合 `GameMode`、`ControlMode`、`MenuSubstate` 和 `ObjectiveType`；不进入视觉、OCR、任务逻辑、Provider、持久化、Windows 平台或输入实现。
+只修改 README、架构、M1 计划和交接状态文档，使它们一致说明 M0 已完成、M1 尚未实现、M1-A 至 M1-G 的固定顺序，以及所选窗口捕获、平台类型隔离、标准用户权限和受控测试窗口输入边界；不开始 M1-A。
 
 ## 4. 已完成事项
 
-- 新增 `IStateEstimator`、`StateEstimator`、`StateEstimatorOptions`、`StateEstimationResult`，以及字段决策、候选支持和 Evidence 审计类型。
-- 稳定目标字段名统一为区分大小写的 `gameMode`、`controlMode`、`menuSubstate`、`objectiveType`；未知字段、未知枚举值、旧枚举名、数字值和大小写不一致值均被拒绝，不做隐式映射。
-- 默认配置要求每个候选至少有 2 个不同 Evidence ID、2 个不同观察时间、累计支持度至少为 1.0；阈值和时间窗口全部集中在不可变 `StateEstimatorOptions` 中并验证。
-- Evidence 按当前评估时间、5 秒默认观察窗口、有效期、冲突状态以及精确的 adapter ID/版本过滤；未来、过期、窗口外、适配器不匹配、重复 ID、无效候选和不支持字段均保留明确审计原因。
-- 同一 Evidence ID 的全部重复项均不计数，避免输入顺序决定哪一份重复证据生效。
-- 候选支持度按字段和候选值分别聚合；两个合格候选的支持度都达到 1.0 且差值不超过 0.15 时，字段回退安全默认值并标记冲突，不使用最后到达者覆盖。
-- 上一快照默认最多保留 5 秒且摘要置信度至少为 0.5；切换优势默认要求 0.25。只有上一值仍有满足多帧门槛的当前支持时才允许滞回保留，否则回退安全默认值或接受具有足够优势的新候选。
-- `CloudCandidate` 只在同一字段、同一候选存在至少一条非云端独立 Evidence 时参与；纯云端候选不能定案，`StateEstimator` 不调用 `IAIProvider`。
-- 输出为新的不可变 `GameState`；本切片未融合字段保持空值或安全默认值。`GameMode` 不是 `Menu`（包括 `Unknown`）时强制将 `MenuSubstate` 清为 `None`。
-- `GameState.Confidence` 是四个字段决策置信度的平均摘要并限制在 0 到 1，不复制单条最高置信度，不接触或改变安全协调器状态，也不能单独授权输入。
-- 结果中的字段决策、候选 Evidence ID、Evidence 审计和 `GameState.Evidence` 均为防御性只读快照；实现不保存共享可变状态，并发相同输入得到确定结果。
-- 已新增 35 个 Core 测试用例，覆盖空输入、单帧拒绝、多帧确认、重复 ID、时效、适配器隔离、严格枚举解析、冲突、优势、滞回、云端确认、跨字段一致性、只读快照、摘要置信度、安全锁存和并发确定性。
-- 未增加或升级第三方依赖，未修改安全协调器、Provider 门控、平台项目、工作流、扫描规则、README、架构文档或许可证文件。
+- `README.md` 已从旧 M0 阶段状态更新为“Developer Preview：M1 Windows 平台能力开发准备阶段”，明确 M0 技术验收已经完成。
+- README 已明确当前仍没有真实游戏窗口捕获、真实前台身份验证、真实输入控制或 GTA 自动操作能力。
+- `docs/ARCHITECTURE.md` 更新日期和第 13 节已同步为 M1 当前状态与下一步，不再保留过时的 M0 启动步骤。
+- README 和架构文档已使用与 `docs/M1_PLAN.md` 一致的 M1-A 至 M1-G 名称和顺序。
+- 已统一终端用户明确选择窗口、不得自动选择 GTA 窗口、不得根据 GTA 标题或进程名自动控制，以及 Capture Target 与 Input Target 分离验证的要求。
+- 已统一 Core 不包含 HWND、`IntPtr`、`nint`、WinRT 或 Windows API 类型，原生资源只留在 Platform.Windows 的边界。
+- 已统一标准用户运行、高权限目标或身份不可验证时默认拒绝且不自动提权的要求。
+- 已统一 M1-E 通过前真实输入调用为零、M1-F/G 也只允许向项目自建独立受控测试窗口发送输入且不得向 GTA V 发送输入的要求。
+- 架构文档不再把 DXGI Desktop Duplication 列为 M1 备用方案；它只保留为 M1 之外的未来研究项，在满足隐私和目标窗口隔离要求前不得启用，也不得作为 WGC 失败回退。
+- `docs/M1_PLAN.md` 中原有的 README/架构待同步说明已替换为完成状态，但没有把任何 M1 能力写成已实现。
+- GTA Online 禁止、进程注入/内存读写/驱动/内核组件/反作弊和 DRM 绕过禁止保持不变。
+- 没有修改任何 `.cs`、项目、测试、工作流、依赖或许可证文件，没有实现 M1-A。
 
 ## 5. 修改或新增的文件
 
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/IStateEstimator.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateEstimator.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateEstimatorOptions.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateEstimationResult.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateField.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldNames.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldDecision.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldDecisionStatus.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateFieldDecisionReason.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/StateCandidateSupport.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/EvidenceAuditEntry.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/EvidenceAuditStatus.cs`
-- 新增：`src/GtaAutoGameplay.Core/StateEstimation/EvidenceRejectionReason.cs`
-- 新增：`tests/GtaAutoGameplay.Core.Tests/StateEstimatorTests.cs`
+- 修改：`README.md`
+- 修改：`docs/ARCHITECTURE.md`
+- 新增且尚未提交：`docs/M1_PLAN.md`
 - 修改：`docs/CODEX_STATUS.md`
+- 生产代码、测试代码、项目文件、依赖和许可证：无修改。
 
 ## 6. 执行的构建、测试和检查命令及结果
 
-- `dotnet build GtaAutoGameplay.sln --configuration Release --force`：通过；6 个项目，0 警告、0 错误。
-- `dotnet test GtaAutoGameplay.sln --configuration Release --no-build --no-restore`：通过；Core 131 个、Repository Guard 13 个，共 144 个测试，0 失败、0 跳过。本切片新增 35 个 Core 测试。
-- 当前候选文件仓库守卫扫描：通过，无阻止项。
-- 完整本地可达分支和标签历史扫描：通过，无阻止项。自建扫描仍不能证明仓库绝对无秘密，也不能替代成熟扫描工具或 GitHub 托管内容审计。
-- M0/M1 边界关键词检查：生产态 `StateEstimation` 代码没有网络、文件、数据库、Windows API、Provider SDK、凭据或真实输入依赖；测试只引用假 Provider 和假输入控制器来证明调用次数为 0 且紧急停止锁存不变。
+- Git 状态和基线检查：通过；实际提交基线为 `5f932d10bd8b7d6123ae2c6e03b1a4f43c17ae35`。
+- Markdown 相对链接检查：通过，当前四份主要文档中的相对文件目标均存在。
+- M0 过时状态搜索：通过；没有剩余把 M0 描述为尚未开始、待启动或当前开发阶段的表述。
+- M1 术语和边界检查：通过；四份文档对 M1-A 至 M1-G 顺序、明确选择、目标分离、Core 类型隔离、标准用户权限和输入限制的表述一致。
+- 当前候选文件仓库守卫扫描：通过，无阻止项。该自建扫描不能替代完整秘密扫描或 GitHub 托管内容审计。
 - `git diff --check`：通过，无空白错误。
+- 构建和测试：未运行。本次只修改 Markdown 文档，没有修改代码、项目或测试；为避免形式性执行，按任务要求不运行完整构建和测试。
 
 ## 7. 已确定的架构和产品决策
 
-- M0 的纯 Core 多帧融合只处理 `GameMode`、`ControlMode`、`MenuSubstate` 和 `ObjectiveType`；任务 ID、阶段、OCR 文本、目标位置、角色和输入配置不在本切片融合范围。
-- `StateEstimator` 采用简单、确定、可解释的时间窗口、累计支持、冲突门槛和滞回规则；这些默认参数只用于领域边界和假对象测试，不代表已经适用于真实 GTA V 画面。
-- Evidence 必须匹配当前 adapter ID 和版本；不同适配器或版本的数据不能混合，为未来适配器保持隔离。
-- 云端候选只能提供结构化候选 Evidence，不能独立定案、发送输入或改变安全协调器状态。
-- `GameState.Confidence` 继续只作为摘要值，输入资格仍由独立、默认拒绝的 `ControlSafetyCoordinator` 和 `ControlSafetyState` 决定。
-- M0 技术验收通过；真实窗口选择、Windows Graphics Capture、前台 HWND/进程验证和 `SendInput` 仍属于 M1，不应回填到 M0。
-- 当前没有 `LICENSE`，仓库只能称为公开可见源码；许可证仍是治理待决事项，不是运行功能缺陷。
+- M0 技术验收已经完成并提交；M1 尚未实现，当前只是开发准备阶段。
+- M1 固定顺序为：A 窗口发现与明确选择、B 窗口与进程身份重新验证、C Windows Graphics Capture、D 最基础本地状态观察、E 前台目标和输入资格验证、F 真实输入控制器最小安全实现、G 最小闭环集成。
+- M1 只捕获终端用户明确选择的单个窗口，不自动选择 GTA 窗口，不以整桌面捕获作为失败回退。
+- Capture Target 与 Input Target 分离验证；捕获成功不授予输入资格。
+- Core 保持平台中立；Windows 原生类型和调用只存在于 Platform.Windows。
+- 软件保持标准用户权限；高权限目标、权限不足或身份无法验证时拒绝，不自动提权。
+- M1-E 通过前真实输入调用必须始终为零；M1-F/G 也只在独立受控测试窗口使用真实输入，不向 GTA V 发送输入。
+- 不支持 GTA Online，不注入、不读写游戏内存、不使用驱动或内核组件、不绕过反作弊、DRM 或平台保护。
+- DXGI Desktop Duplication 不属于 M1；未来研究必须先重新审查隐私与目标隔离。
+- 当前没有 `LICENSE`，仓库仍只能称为公开可见源码；公开安装包仍必须等待 M9。
 
 ## 8. 尚未解决的问题或阻塞项
 
-- M0 技术缺口：无。基于当前权威文档、既有 M0 验收审查和本切片验证，M0 技术验收通过。
-- 治理待决：代码许可证尚未选择，因此不得接受需要合并代码的外部贡献、声称开源或发布安装包。
-- 治理待决：测试传递依赖许可证尚未逐项核实；公开发布安装包前必须完成相应许可证与再分发审计。
-- 治理待决：GitHub Issue/PR 附件、Actions 历史产物、缓存和 Releases 等远程托管内容不在本地仓库守卫扫描范围内，仍需项目维护者按公开仓库与 M9 清单审计。
-- 阻塞项：无。上述治理事项不阻止本地规划和开发 M1，但继续接受外部贡献、声称开源或公开安装包仍受现有规则限制。
+- 阻止 M1-A 的文档问题：无。
+- M1-C 前仍需项目维护者确定最低 Windows 版本/构建号，并审核 WGC 的 SDK 接入方式和可能新增依赖。
+- M1-G 前仍需项目维护者确认明确 armed 的真实交互方式。
+- 受控测试窗口建议采用独立、仅测试用 WPF 项目；实施前仍需项目维护者确认。
+- 仅凭窗口和进程身份无法证明 GTA V 当前处于离线故事模式，因此 M1 不向 GTA V 发送输入。未来如需此类试验必须单独授权并先定义可验证的离线模式门。
+- 治理待决：代码许可证、测试传递依赖许可证和 GitHub 远程托管内容审计未完成；这些不阻止 M1-A，但阻止声称开源、接受需要合并的外部贡献或公开安装包。
 
 ## 9. 工作树是否存在未提交修改
 
-是。工作树包含本次新增的纯 Core StateEstimator 契约、实现、测试以及本状态文档修改，尚未 commit 或 push；构建和测试输出由 `.gitignore` 排除。
+是。当前未提交文件为：
+
+- `README.md`
+- `docs/ARCHITECTURE.md`
+- `docs/CODEX_STATUS.md`
+- `docs/M1_PLAN.md`（新增、未跟踪）
+
+没有未提交的生产代码、测试代码、项目文件、依赖或许可证修改。
 
 ## 10. 建议的下一项最小任务
 
-先进行只读的 M1 分步规划。建议首个候选实施切片是“用户可见的 GTA V 窗口发现与明确选择边界”：只建立 Windows 平台的窗口枚举、进程/窗口身份只读快照、选择结果和假对象测试，不同时实现画面捕获、前台输入验证或 `SendInput`。
+M1-A“窗口发现与明确选择边界”。先实现平台中立、不可变的窗口候选/身份/选择契约和 Core 假对象测试，再独立实现可见顶层窗口枚举与终端用户明确选择 UI；完成时仍不得捕获、验证前台、armed 或发送输入。
